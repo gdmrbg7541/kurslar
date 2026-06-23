@@ -375,16 +375,9 @@ function authIslemi() {
     // E-posta hafızaya kaydet
     localStorage.setItem('savedEmail', email);
 
-    // Admin Kontrolü
-    if (email === "gdmrbg7541@gmail.com" && pass === "VTX29SLh") {
-        if (selectedRole === "admin") {
-            basariliGiris(email);
-            return;
-        }
-        // Eğer yönetici e-postası ve şifresi girilmişse ama rol öğretmen veya öğrenci seçilmişse
-        // aşağıda öğretmen veya öğrenci tablosundan doğrulanmaya devam etmesine izin ver.
-    } else if (selectedRole === "admin") {
-        errorEl.innerText = "Yönetici girişi başarısız. Yetkiniz bulunmuyor veya şifreniz hatalı.";
+    // Yönetici Firebase Auth ile girecek, eğer Firebase yoksa ve rol admin ise
+    if (!isFirebaseReady && selectedRole === "admin") {
+        errorEl.innerText = "Yönetici girişi için veritabanı (Firebase) bağlantısı gereklidir.";
         return;
     }
 
