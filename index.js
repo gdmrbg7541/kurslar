@@ -118,13 +118,13 @@ let teacherSchedules = {
    3. FIREBASE & AUTH (GİRİŞ/KAYIT)
    ========================================== */
 const firebaseConfig = {
-    apiKey: "AIzaSyBGIQPJ_Bjm5I3-QmrrGpLR5MqmG3S5F8w",
-    authDomain: "kidefarapca-98f9c.firebaseapp.com",
-    projectId: "kidefarapca-98f9c",
-    storageBucket: "kidefarapca-98f9c.firebasestorage.app",
-    messagingSenderId: "503317118211",
-    appId: "1:503317118211:web:a9c8cf15b854597e0b3d36",
-    measurementId: "G-HYY6T2EDKY"
+    apiKey: "AIzaSyCACkSgl93T0ffFDTFLuCszy9nh7odH5VU",
+    authDomain: "kurslar-835c0.firebaseapp.com",
+    projectId: "kurslar-835c0",
+    storageBucket: "kurslar-835c0.firebasestorage.app",
+    messagingSenderId: "956300904876",
+    appId: "1:956300904876:web:8e43e9a0c60a1811dad209",
+    measurementId: "G-JENZQ7X5LW"
 };
 
 let isFirebaseReady = true;
