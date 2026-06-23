@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kidef Arapça - Premium Öğrenim Platformu</title>
+    <!-- Tekil CSS Dosyası -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+    <!-- Firebase SDK (Önce yüklenmeli) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <!-- HEADER: Sadece Logo, Kullanıcı Bilgisi ve Login/Logout Butonları -->
+    <header>
+        <div class="user-controls" style="cursor:pointer;" onclick="goBack()">
+            <svg id="header-back-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <svg id="header-home-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <h1 id="header-logo-text" style="text-transform: lowercase;">kidefarapca.com</h1>
+        </div>
+        <div class="user-controls">
+            <div id="user-info" class="user-info"></div>
+            <button id="header-login-btn" class="btn btn-secondary" onclick="showLoginModal()">Giriş Yap / Kayıt</button>
+            <button id="logout-btn" class="btn btn-danger" style="display:none;" onclick="cikisYap()">Çıkış Yap 🚪</button>
+        </div>
+    </header>
+
+    <!-- GENEL GİRİŞ MODALI (Header üzerinden tıklanırsa açılır) -->
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal-content glass-card" style="box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            <div class="modal-close" onclick="closeLoginModal()">✖</div>
+            <h2 id="auth-title" style="color:#4facfe; margin-top:0;">Sisteme Giriş Yap</h2>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button onclick="setRole('student')" id="btn-student" class="role-btn active-role">Öğrenci</button>
+                <button onclick="setRole('teacher')" id="btn-teacher" class="role-btn">Öğretmen</button>
+                <button onclick="setRole('admin')" id="btn-admin" class="role-btn">Yönetici</button>
+            </div>
+
+            <div style="display: flex; gap: 15px; width: 100%; flex-wrap: wrap;" id="student-extra-group">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label>Ad Soyad</label>
+                    <input type="text" id="student-name" placeholder="Örn: Ali Yılmaz">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label>Meslek (İsteğe Bağlı)</label>
+                    <input type="text" id="student-profession" placeholder="Örn: Öğretmen, Mühendis...">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 15px; width: 100%; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 200px;">
+                    <label>E-posta Adresi</label>
+                    <input type="email" id="email" placeholder="ornek@mail.com" required>
+                </div>
+                <div class="form-group" id="phone-group" style="display: none; flex: 1; min-width: 200px;">
+                    <label>Telefon Numarası</label>
+                    <div style="display: flex;">
+                        <span style="padding: 12px; background: #E9EEF5; border: 1px solid #E9EEF5; border-radius: 12px 0 0 12px; color: #555; font-weight: bold;">+90</span>
+                        <input type="tel" id="phone" placeholder="5XX XXX XX XX" pattern="^5[0-9]{9}$" maxlength="10" style="border-radius: 0 12px 12px 0; border-left: none;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; width: 100%; flex-wrap: wrap;">
+                <div class="form-group" style="position:relative; flex: 1; min-width: 200px;">
+                    <label>Şifre</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                    <span style="position:absolute; right:15px; top:40px; cursor:pointer;" onclick="togglePassword('password')">👁️</span>
+                </div>
+                <div class="form-group" id="re-password-group" style="display: none; position:relative; flex: 1; min-width: 200px;">
+                    <label>Şifreyi Onayla</label>
+                    <input type="password" id="re-password" placeholder="••••••••">
+                    <span style="position:absolute; right:15px; top:40px; cursor:pointer;" onclick="togglePassword('re-password')">👁️</span>
+                </div>
+            </div>
+
+            <div class="form-group" id="teacher-cv-group" style="display: none;">
+                <label>Özgeçmiş (CV) / Neden Siz?</label>
+                <textarea id="teacher-cv" placeholder="Üniversite, bölüm, mezuniyet, tecrübe ve başarılarınızdan bahsedin..." rows="4" style="width: 100%; padding: 12px; border: 1px solid #E9EEF5; border-radius: 12px; font-family: inherit; font-size: 14px; resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+            
+            <div class="form-group" id="teacher-file-group" style="display: none;">
+                <label>Diploma veya E-devlet Belgesi (PDF/JPG)</label>
+                <input type="file" id="teacher-file" accept=".pdf,.jpg,.jpeg,.png" style="width: 100%; padding: 10px; border: 1px dashed #4facfe; border-radius: 12px; background: #f0f8ff; box-sizing: border-box;">
+                <small style="color: #666; display: block; margin-top: 5px;">* Lütfen yeterliliğinizi doğrulayan bir belge yükleyin.</small>
+            </div>
+            
+            <button id="auth-action-btn" class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="authIslemi()">Giriş Yap</button>
+            <p id="hata-mesaji" style="color:#ff6b6b; font-size:13px; min-height:15px; margin: 10px 0;"></p>
+            
+            <div style="text-align:center; font-size:14px;" id="auth-switch-container">
+                <span id="auth-switch-text">Hesabınız yok mu?</span> 
+                <span class="auth-toggle-text" id="auth-switch-link" onclick="moduDegistir()">Kayıt Ol</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- DASHBOARD: MİSAFİR VEYA ÖĞRENCİ ANA EKRANI -->
+        <section id="dashboard-section" class="app-section" style="display:none;">
+            <div style="text-align: center; margin: 40px 0;">
+                <h2>Eğitim Modelinizi Seçin</h2>
+                <p style="color: rgba(0,0,0,0.7);">Kendi hızınızda mı ilerlemek istersiniz, yoksa canlı destek mi almalısınız?</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+                <div class="glass-card" style="text-align: center; cursor: pointer; transition: 0.3s;" onclick="changeView('offline-list')" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">📚</div>
+                    <h3 style="color: #4facfe;">Akıllı Çevrimdışı Eğitim</h3>
+                    <p style="color: rgba(0,0,0,0.6); font-size:0.95rem;">Sıralı kazanımlar ve yapay zeka destekli hata takip sistemiyle dilediğiniz an öğrenin.</p>
+                    <button class="btn btn-secondary mt-20">Paketleri İncele</button>
+                </div>
+                <div class="glass-card" style="text-align: center; cursor: pointer; transition: 0.3s;" onclick="changeView('online-section')" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                    <div style="font-size: 3rem; margin-bottom: 15px;">🎤</div>
+                    <h3 style="color: #ff6b6b;">Birebir Canlı Ders</h3>
+                    <p style="color: rgba(0,0,0,0.6); font-size:0.95rem;">Eğitmenlerimizle özel randevu oluşturun ve tarayıcı üzerinden canlı eğitime katılın.</p>
+                    <button class="btn btn-primary mt-20">Randevu Al</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADMIN EKRANI -->
+        <section id="admin-section" class="app-section" style="display:none;"></section>
+        
+        <!-- TEACHER EKRANI -->
+        <section id="teacher-section" class="app-section" style="display:none;"></section>
+
+        <!-- OFFLINE EĞİTİMLER -->
+        <section id="offline-section" class="app-section" style="display:none; padding-bottom: 120px;">
+            <h2>Özel Eğitim Paketleri</h2>
+            <div class="package-grid" id="package-list-area"></div>
+            
+            <div id="offline-checkout-summary" class="glass-card" style="display:none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; border-radius: 0; margin: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); box-shadow: 0 -5px 20px rgba(0,0,0,0.15); border-top: 4px solid #20C997; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 1.1rem; color: #555;">
+                    <span style="font-weight: 700; color: #333;">Seçilen Paketleri Satın Al</span>
+                    <br>
+                    <small>İstediğiniz paketleri yukarıdan seçebilirsiniz.</small>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span id="offline-total-text" style="font-size: 1.5rem; font-weight: bold; margin-right: 20px; color: #20C997;"></span>
+                    <button class="btn btn-success" style="font-size: 1.1rem; padding: 12px 30px; box-shadow: 0 4px 10px rgba(32,201,151,0.4);" onclick="bookOfflinePackages()">Satın Alma Adımına Geç</button>
+                </div>
+            </div>
+
+            <div id="active-package-area" class="glass-card" style="display:none; margin-top: 30px;">
+                <h3 id="current-package-title" style="color: #4facfe;">Paket İçeriği</h3>
+                <div class="mt-20">
+                    <span style="font-weight: 600;">Öğrenim İlerlemesi:</span>
+                    <div class="kazanim-timeline" id="kazanim-timeline-render"></div>
+                </div>
+
+                <div class="dark-box mt-20">
+                    <h4 style="color: #38ef7d; margin-top:0;">Ders Materyali</h4>
+                    <div id="topic-text">Yükleniyor...</div>
+                </div>
+
+                <div class="dark-box mt-20" style="border-color: #ff6b6b;">
+                    <h4 style="color: #ff6b6b; margin-top:0;">Ölçme ve Değerlendirme Modülü</h4>
+                    <p id="question-text" style="font-size: 1.1rem; margin-bottom: 25px;">Soru hazırlanıyor...</p>
+                    <div style="display: flex; gap: 15px;">
+                        <button class="btn btn-success" onclick="simulateAnswer(true)">Doğru Cevabı İşaretle</button>
+                        <button class="btn btn-danger" onclick="simulateAnswer(false)">Hatalı Cevap (Tekrara Al)</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ONLINE EĞİTİMLER -->
+        <section id="online-section" class="app-section" style="display:none;">
+            <h2>Birebir Canlı Ders ve Randevu Modülü</h2>
+
+            <!-- İnteraktif Sınıf Ekranı (Sadece aktif ders varken görünür) -->
+            <div id="interactive-class-section" class="glass-card mt-20" style="display:none; border: 2px solid #ff6b6b; box-shadow: 0 0 15px rgba(255,107,107,0.3);">
+                <h3 style="color:#ff6b6b; margin-top:0;">🔴 İnteraktif Sınıf (Ders Ekranı)</h3>
+                <p style="color: rgba(0,0,0,0.7); text-align: center; margin-bottom: 20px;" id="interactive-class-info">Derse az kaldı, hazırlanın!</p>
+                <div id="join-lesson-container" style="text-align: center; margin: 20px 0;">
+                    <button class="btn btn-success" style="font-size: 1.2rem; padding: 15px 30px;" onclick="joinLesson()">🟢 Derse Katıl</button>
+                </div>
+                
+                <div id="lesson-video-container" style="display: none; position: relative; background: #000; border-radius: 12px; overflow: hidden; margin-top: 20px; width: 100%; aspect-ratio: 16/9;">
+                    <video id="mainTeacherVideo" class="remote-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                    <div style="position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.6); color: white; padding: 5px 12px; border-radius: 6px; font-size: 13px;">Eğitmen Paylaşımı</div>
+                    
+                    <div id="draggable-camera" style="position: absolute; bottom: 20px; right: 20px; width: 220px; aspect-ratio: 16/9; background: #222; border-radius: 8px; overflow: hidden;">
+                        <video id="smallTeacherVideo" class="remote-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                        <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; padding: 3px 8px; border-radius: 4px; font-size: 11px;">Eğitmen Kamerası</div>
+                    </div>
+
+                    <button class="btn btn-danger" style="position: absolute; bottom: 20px; left: 20px;" onclick="leaveLesson()">✖ Dersten Çık</button>
+                </div>
+            </div>
+
+            <!-- 1. Aşama: Paket Seçimi -->
+            <div id="online-step-1" class="glass-card mt-20" style="transition: max-height 0.4s ease, opacity 0.4s ease; overflow: hidden;">
+                <h3 style="color:#4facfe; margin-top:0; cursor:pointer;" onclick="editOnlineStep1()">
+                    1. Eğitim Paketi Seçimi
+                    <span id="step1-header-total" style="float:right; font-size:1.1rem; color:#20C997; display:none;"></span>
+                </h3>
+                <div class="mt-20">
+                    <label style="color:rgba(0,0,0,0.7); display:block; margin-bottom:10px;">Konuşma ve Pratik Paketleri (Birden fazla seçebilirsiniz):</label>
+                    <div id="online-package-list" style="max-height: 320px; overflow-y: auto; padding-right: 10px;"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 15px;">
+                        <span id="step1-live-total" style="font-weight: bold; font-size: 1.1rem; color: #20C997;">Ara Toplam: 0 ₺</span>
+                        <button class="btn btn-primary" onclick="checkOnlineStep1()">Seçimi Tamamla</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Aşama: Eğitmen ve Takvim -->
+            <div id="online-step-2" class="glass-card mt-20" style="opacity: 0.4; pointer-events: none; transition: 0.4s ease; overflow: hidden;">
+                <h3 style="color:#F39C12; margin-top:0; cursor:pointer;" onclick="editOnlineStep2()">2. Eğitmen ve Ders Saati Seçimi</h3>
+                <div class="mt-20 form-group" style="max-width: 400px;">
+                    <label>Eğitmen Seçin (Takvim için):</label>
+                    <select id="teacher-select" onchange="renderCalendar()"></select>
+                </div>
+                <p style="color: rgba(0,0,0,0.6); font-size: 0.9rem; margin-top: 20px;">* Yeşil renkli bir saat dilimi seçin.</p>
+                <div id="calendar-view" class="mt-10"></div>
+                
+                <div style="margin-top: 20px; text-align: right; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 20px;">
+                    <button class="btn btn-primary" onclick="checkOnlineStep2()">Seçimi Tamamla</button>
+                </div>
+            </div>
+
+            <!-- 3. Aşama: Dersi Onayla ve Ödemeye Geç -->
+            <div id="online-step-3" class="glass-card mt-20" style="opacity: 0.4; pointer-events: none; transition: 0.4s ease; overflow: hidden; max-height: 70px;">
+                <h3 style="color:#20C997; margin-top:0; cursor:pointer;" onclick="editOnlineStep3()">3. Dersi Onayla ve Ödemeye Geç</h3>
+                
+                <div class="mt-20" style="background: rgba(255,255,255,0.5); padding: 15px; border-radius: 8px; border-left: 4px solid #20C997;">
+                    <h4 style="margin-top:0; margin-bottom:10px;">Seçim Özeti</h4>
+                    <div id="selected-summary" style="font-size: 1rem; color: rgba(0,0,0,0.8); line-height: 1.6;">Henüz seçim yapılmadı</div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-success" style="font-size: 1.1rem; padding: 12px 24px;" onclick="bookLiveLesson()">Seçimleri Onayla ve Ödemeye Geç</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- YENİ BİRLEŞTİRİLMİŞ ÖDEME & KAYIT EKRANI (CHECKOUT FLOW) -->
+        <section id="checkout-section" class="app-section" style="display:none;">
+            <h2>Siparişi Tamamla</h2>
+            <div class="checkout-grid">
+                
+                <!-- SOL TARAFI (Auth veya Onay) -->
+                <div>
+                    <!-- Zaten giriş yaptıysa gösterilecek kısım -->
+                    <div id="checkout-logged-in-view" class="glass-card" style="display: none; text-align: center;">
+                        <h3 style="color:#38ef7d; margin-top:0;">Giriş Yapıldı ✅</h3>
+                        <p>Şu an <strong><span id="checkout-user-email"></span></strong> hesabı ile işlem yapıyorsunuz.</p>
+                        <p style="font-size: 0.9rem; color:rgba(0,0,0,0.6);">Hesap size ait değilse yukarıdan çıkış yapabilirsiniz.</p>
+                        <button class="btn btn-success mt-20" style="width:100%; font-size: 1.1rem; padding: 15px;" onclick="confirmPurchase()">Ödemeyi Yaptım & Onayla</button>
+                    </div>
+
+                    <!-- Misafirse gösterilecek giriş/kayıt formu -->
+                    <div id="checkout-auth-form" class="glass-card">
+                        <h3 style="color:#4facfe; margin-top:0;" id="checkout-auth-title">İşleme Devam Etmek İçin Giriş Yapın</h3>
+                        <p style="font-size:0.9rem; color:rgba(0,0,0,0.6);">Ödemenizin ve paketinizin hesabınıza işlenebilmesi için kayıt olmanız veya giriş yapmanız gereklidir.</p>
+                        
+                        <div class="form-group mt-20">
+                            <label>E-posta Adresi</label>
+                            <input type="email" id="checkout-email" placeholder="ornek@mail.com" required>
+                        </div>
+                        <div class="form-group" style="position:relative;">
+                            <label>Şifre</label>
+                            <input type="password" id="checkout-password" placeholder="••••••••" required>
+                        </div>
+                        <div class="form-group" id="checkout-re-password-group" style="display: none; position:relative;">
+                            <label>Şifreyi Onayla</label>
+                            <input type="password" id="checkout-re-password" placeholder="••••••••">
+                        </div>
+                        
+                        <div class="form-group" id="checkout-phone-group" style="display: none;">
+                            <label>Telefon Numarası</label>
+                            <div style="display: flex;">
+                                <span style="padding: 12px; background: #E9EEF5; border: 1px solid #E9EEF5; border-radius: 12px 0 0 12px; color: #555; font-weight: bold;">+90</span>
+                                <input type="tel" id="checkout-phone" placeholder="5XX XXX XX XX" pattern="^5[0-9]{9}$" maxlength="10" style="border-radius: 0 12px 12px 0; border-left: none;">
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-primary mt-10" style="width:100%;" onclick="checkoutAuthIslemi()" id="checkout-action-btn">Giriş Yap</button>
+                        <p id="checkout-hata-mesaji" style="color:#ff6b6b; font-size:13px; min-height:15px; margin: 10px 0;"></p>
+                        
+                        <div style="text-align:center; font-size:14px;">
+                            <span id="checkout-switch-text">Hesabınız yok mu?</span> 
+                            <span class="auth-toggle-text" onclick="toggleCheckoutAuthMode()" id="checkout-switch-link">Kayıt Ol</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SAĞ TARAFI (IBAN & Paket Bilgisi) -->
+                <div id="checkout-package-info">
+                    <!-- Dinamik olarak JS'den doldurulacak -->
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <!-- TEKİL JS DOSYASI -->
+    <script src="index.js"></script>
+
+    <!-- CHECKOUT GİRİŞ İÇİN KÜÇÜK YARDIMCI SCRIPT -->
+    <script>
+        let isCheckoutLoginMode = true;
+        function toggleCheckoutAuthMode() {
+            isCheckoutLoginMode = !isCheckoutLoginMode;
+            if(isCheckoutLoginMode) {
+                document.getElementById('checkout-auth-title').innerText = "İşleme Devam Etmek İçin Giriş Yapın";
+                document.getElementById('checkout-action-btn').innerText = "Giriş Yap";
+                document.getElementById('checkout-switch-text').innerText = "Hesabınız yok mu?";
+                document.getElementById('checkout-switch-link').innerText = "Kayıt Ol";
+                document.getElementById('checkout-re-password-group').style.display = "none";
+                document.getElementById('checkout-phone-group').style.display = "none";
+            } else {
+                document.getElementById('checkout-auth-title').innerText = "İşleme Devam Etmek İçin Kayıt Olun";
+                document.getElementById('checkout-action-btn').innerText = "Kayıt Ol";
+                document.getElementById('checkout-switch-text').innerText = "Zaten hesabınız var mı?";
+                document.getElementById('checkout-switch-link').innerText = "Giriş Yap";
+                document.getElementById('checkout-re-password-group').style.display = "block";
+                document.getElementById('checkout-phone-group').style.display = "block";
+            }
+        }
+
+        function checkoutAuthIslemi() {
+            const email = document.getElementById('checkout-email').value.trim();
+            const pass = document.getElementById('checkout-password').value;
+            const errorEl = document.getElementById('checkout-hata-mesaji');
+            errorEl.innerText = "";
+
+            if (!email || !pass) {
+                errorEl.innerText = "Lütfen tüm alanları doldurun.";
+                return;
+            }
+
+            localStorage.setItem('savedEmail', email);
+
+            if (!isFirebaseReady) {
+                let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+                if (!isCheckoutLoginMode) {
+                    const pass2 = document.getElementById('checkout-re-password').value;
+                    const phone = document.getElementById('checkout-phone').value.trim();
+                    if (pass !== pass2) { errorEl.innerText = "Şifreler uyuşmuyor."; return; }
+                    if (!phone.match(/^5[0-9]{9}$/)) { errorEl.innerText = "Lütfen 5 ile başlayan 10 haneli bir telefon numarası girin."; return; }
+                    if (users[email]) { errorEl.innerText = "Bu e-posta zaten kayıtlı."; return; }
+                    
+                    users[email] = { password: pass, phone: "+90" + phone };
+                    localStorage.setItem('mockUsers', JSON.stringify(users));
+                } else {
+                    if (!users[email] || users[email].password !== pass) {
+                        errorEl.innerText = "Kullanıcı bulunamadı veya şifre hatalı. Lütfen önce kayıt olun."; 
+                        return;
+                    }
+                }
+                basariliGiris(email, users[email] ? users[email].phone : "");
+                return;
+            }
+
+            if (isCheckoutLoginMode) {
+                firebase.auth().signInWithEmailAndPassword(email, pass)
+                .then((userCredential) => { basariliGiris(userCredential.user.email); })
+                .catch((error) => { errorEl.innerText = "Giriş başarısız: " + error.message; });
+            } else {
+                const pass2 = document.getElementById('checkout-re-password').value;
+                if (pass !== pass2) { errorEl.innerText = "Şifreler uyuşmuyor."; return; }
+                firebase.auth().createUserWithEmailAndPassword(email, pass)
+                .then((userCredential) => { basariliGiris(userCredential.user.email); })
+                .catch((error) => { errorEl.innerText = "Kayıt başarısız: " + error.message; });
+            }
+        }
+    </script>
+</body>
+</html>
