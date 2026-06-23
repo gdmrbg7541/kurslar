@@ -419,10 +419,10 @@ details.day-group .slots-grid {
 
 /* Mobil Uyumlu Eklemeler */
 @media (max-width:576px){
-  header { flex-direction:column; gap:15px; padding: 15px; align-items: stretch; position: relative; }
-  header h1 { font-size: 1.6em; margin: 0; text-align: left; margin-left: 45px; }
-  .user-controls { justify-content: flex-start; width: 100%; flex-wrap: wrap; }
-  .user-controls:first-child { justify-content: flex-start; min-height: 32px; }
-  .user-controls:last-child { justify-content: center; }
-  #header-back-icon, #header-home-icon { position: absolute !important; left: 15px !important; top: 15px !important; margin: 0 !important; }
+  header { flex-direction:column; gap:15px; padding: 15px; align-items: stretch; }
+  header h1 { font-size: 1.6em; margin: 0; text-align: left; }
+  .user-controls { width: 100%; }
+  .user-controls:first-child { justify-content: flex-start; flex-wrap: nowrap; }
+  .user-controls:last-child { justify-content: center; flex-wrap: wrap; gap: 10px; }
+  #header-back-icon, #header-home-icon { margin-right: 5px; }
 }
