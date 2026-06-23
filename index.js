@@ -118,15 +118,22 @@ let teacherSchedules = {
    3. FIREBASE & AUTH (GİRİŞ/KAYIT)
    ========================================== */
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyBGIQPJ_Bjm5I3-QmrrGpLR5MqmG3S5F8w",
+    authDomain: "kidefarapca-98f9c.firebaseapp.com",
+    projectId: "kidefarapca-98f9c",
+    storageBucket: "kidefarapca-98f9c.firebasestorage.app",
+    messagingSenderId: "503317118211",
+    appId: "1:503317118211:web:a9c8cf15b854597e0b3d36",
+    measurementId: "G-HYY6T2EDKY"
 };
 
-let isFirebaseReady = false;
+let isFirebaseReady = true;
+let db = null;
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+}
 
 (function loadAppData() {
     // Versiyon kontrolü: Eğer paketler güncellenmişse eskisini silip yeni paketleri yükle
@@ -171,18 +178,72 @@ function saveTeachers() {
     localStorage.setItem('mockOnlinePackages', JSON.stringify(appState.onlinePackages));
     localStorage.setItem('mockTeacherAlarms', JSON.stringify(appState.teacherAlarms));
     localStorage.setItem('mockStudentProgress', JSON.stringify(appState.studentProgress));
+
+    if (typeof firebase !== 'undefined' && isFirebaseReady) {
+        db.collection('global').doc('appState').set({
+            teachers: appState.teachers,
+            teacherApplications: appState.teacherApplications,
+            teacherAlarms: appState.teacherAlarms,
+            studentProgress: appState.studentProgress,
+            packages: appState.packages,
+            onlinePackages: appState.onlinePackages
+        });
+        db.collection('global').doc('teacherSchedules').set({
+            schedules: teacherSchedules
+        });
+    }
 }
 
-if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY") {
-    firebase.initializeApp(firebaseConfig);
-    isFirebaseReady = true;
+if (typeof firebase !== 'undefined' && isFirebaseReady) {
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-            basariliGiris(user.email);
+            // Firestore'dan kullanıcı verisini çek
+            db.collection('users').doc(user.email).get().then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    selectedRole = data.role || 'student';
+                    
+                    if (selectedRole === 'student') {
+                        appState.purchasedPackages = data.purchasedPackages || [];
+                        if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
+                        appState.studentProgress["self"][user.email] = data.progress || {};
+                    }
+
+                    basariliGiris(user.email, data.phone);
+                } else {
+                    // Belki admin'dir
+                    if (user.email === 'gdmrbg7541@gmail.com') {
+                        selectedRole = 'admin';
+                        basariliGiris(user.email, "");
+                    } else {
+                        basariliGiris(user.email, "");
+                    }
+                }
+            }).catch(err => {
+                console.error("Firestore okuma hatası:", err);
+                basariliGiris(user.email, "");
+            });
         } else {
             initAppAsGuest();
         }
     });
+
+    // Sayfa yüklendiğinde global verileri Firestore'dan al
+    db.collection('global').doc('appState').get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.teachers) appState.teachers = data.teachers;
+            if (data.teacherApplications) appState.teacherApplications = data.teacherApplications;
+            if (data.teacherAlarms) appState.teacherAlarms = data.teacherAlarms;
+            if (data.studentProgress) appState.studentProgress = data.studentProgress;
+            // Diğer veriler
+        }
+    }).catch(err => console.log(err));
+
+    db.collection('global').doc('teacherSchedules').get().then(doc => {
+        if (doc.exists) teacherSchedules = doc.data().schedules || {};
+    });
+
 } else {
     // Firebase yokken (simülasyon)
     window.addEventListener('DOMContentLoaded', () => {
@@ -403,13 +464,33 @@ function authIslemi() {
 
     if (isLoginMode) {
         firebase.auth().signInWithEmailAndPassword(email, pass)
-        .then((userCredential) => { basariliGiris(userCredential.user.email); })
+        .then((userCredential) => { 
+            // onAuthStateChanged verileri Firestore'dan çekecek
+        })
         .catch((error) => { errorEl.innerText = "Giriş başarısız: " + error.message; });
     } else {
         const pass2 = document.getElementById('re-password').value;
+        const phone = document.getElementById('phone').value.trim();
+        const sName = document.getElementById('student-name').value.trim();
+        const sProf = document.getElementById('student-profession').value.trim();
+
         if (pass !== pass2) { errorEl.innerText = "Şifreler uyuşmuyor."; return; }
+        
         firebase.auth().createUserWithEmailAndPassword(email, pass)
-        .then((userCredential) => { basariliGiris(userCredential.user.email); })
+        .then((userCredential) => { 
+            // Firestore'a kaydet
+            db.collection('users').doc(email).set({
+                role: selectedRole,
+                name: sName || "Belirtilmedi",
+                profession: sProf || "Belirtilmedi",
+                phone: "+90" + phone,
+                purchasedPackages: [],
+                progress: {}
+            }).then(() => {
+                alert("Kayıt başarılı!");
+                // onAuthStateChanged gerisini halleder
+            });
+        })
         .catch((error) => { errorEl.innerText = "Kayıt başarısız: " + error.message; });
     }
 }
@@ -1356,6 +1437,13 @@ function saveStudentData() {
                 users[appState.currentUser].progress = appState.studentProgress["self"][appState.currentUser];
             }
             localStorage.setItem('mockUsers', JSON.stringify(users));
+        }
+
+        if (typeof firebase !== 'undefined' && isFirebaseReady) {
+            db.collection('users').doc(appState.currentUser).update({
+                purchasedPackages: appState.purchasedPackages,
+                progress: appState.studentProgress["self"] ? appState.studentProgress["self"][appState.currentUser] : {}
+            }).catch(err => console.error("Öğrenci verisi kaydedilemedi:", err));
         }
     }
 }
@@ -2468,8 +2556,21 @@ function saveTeacherPassword(teacherId) {
             users[teacher.email].password = teacher.password;
             localStorage.setItem('mockUsers', JSON.stringify(users));
         }
-        
-        alert("Şifreniz başarıyla güncellendi.");
+
+        if (typeof firebase !== 'undefined' && isFirebaseReady) {
+            const user = firebase.auth().currentUser;
+            if (user) {
+                user.updatePassword(teacher.password).then(() => {
+                    alert("Şifreniz başarıyla güncellendi.");
+                }).catch(err => {
+                    alert("Firebase şifre güncelleme hatası: " + err.message + "\nLütfen çıkış yapıp tekrar giriş yaparak deneyin.");
+                });
+            } else {
+                alert("Şifreniz başarıyla güncellendi.");
+            }
+        } else {
+            alert("Şifreniz başarıyla güncellendi.");
+        }
         
         // Reset UI
         input.disabled = true;

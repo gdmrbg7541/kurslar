@@ -311,6 +311,11 @@
 
     </div>
 
+    <!-- FIREBASE SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
     <!-- TEKİL JS DOSYASI -->
     <script src="index.js"></script>
 
@@ -372,13 +377,28 @@
 
             if (isCheckoutLoginMode) {
                 firebase.auth().signInWithEmailAndPassword(email, pass)
-                .then((userCredential) => { basariliGiris(userCredential.user.email); })
+                .then((userCredential) => { 
+                    // onAuthStateChanged ilgilenecek
+                })
                 .catch((error) => { errorEl.innerText = "Giriş başarısız: " + error.message; });
             } else {
                 const pass2 = document.getElementById('checkout-re-password').value;
+                const phone = document.getElementById('checkout-phone').value.trim();
                 if (pass !== pass2) { errorEl.innerText = "Şifreler uyuşmuyor."; return; }
+                
                 firebase.auth().createUserWithEmailAndPassword(email, pass)
-                .then((userCredential) => { basariliGiris(userCredential.user.email); })
+                .then((userCredential) => { 
+                    db.collection('users').doc(email).set({
+                        role: 'student',
+                        name: "Belirtilmedi",
+                        profession: "Belirtilmedi",
+                        phone: "+90" + phone,
+                        purchasedPackages: [],
+                        progress: {}
+                    }).then(() => {
+                        // onAuthStateChanged ilgilenecek
+                    });
+                })
                 .catch((error) => { errorEl.innerText = "Kayıt başarısız: " + error.message; });
             }
         }
