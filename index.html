@@ -27,7 +27,8 @@
             <h1 id="header-logo-text" style="text-transform: lowercase;">kidefarapca.com</h1>
         </div>
         <div class="user-controls">
-            <div id="user-info" class="user-info"></div>
+            <div id="user-info" class="user-info" style="margin-right: 10px;"></div>
+            <button id="nav-student-profile" class="btn" style="display:none; background: #20C997; color: white; margin-right: 5px;" onclick="toggleStudentProfile()">Profilim</button>
             <button id="header-login-btn" class="btn btn-secondary" onclick="showLoginModal()">Giriş Yap / Kayıt</button>
             <button id="logout-btn" class="btn btn-danger" style="display:none;" onclick="cikisYap()">Çıkış Yap 🚪</button>
         </div>
@@ -45,7 +46,7 @@
                 <button onclick="setRole('admin')" id="btn-admin" class="role-btn">Yönetici</button>
             </div>
 
-            <div style="display: flex; gap: 15px; width: 100%; flex-wrap: wrap;" id="student-extra-group">
+            <div style="display: none; gap: 15px; width: 100%; flex-wrap: wrap;" id="student-extra-group">
                 <div class="form-group" style="flex: 1; min-width: 200px;">
                     <label>Ad Soyad</label>
                     <input type="text" id="student-name" placeholder="Örn: Ali Yılmaz">
@@ -131,6 +132,9 @@
 
         <!-- ADMIN EKRANI -->
         <section id="admin-section" class="app-section" style="display:none;"></section>
+        
+        <!-- STUDENT PROFILE EKRANI -->
+        <section id="student-profile-section" class="app-section" style="display:none;"></section>
         
         <!-- TEACHER EKRANI -->
         <section id="teacher-section" class="app-section" style="display:none;"></section>

@@ -38,45 +38,71 @@ let appState = {
     studentProgress: {},
     
     teachers: [
-        { id: "hoca1", name: "Eğitmen Geylani", phone: "+905386482614", email: "hoca1@mail.com", password: "123" },
-        { id: "hoca2", name: "Eğitmen Şeyma", phone: "+905000000002", email: "hoca2@mail.com", password: "123" },
-        { id: "hoca3", name: "Eğitmen Mehmet", phone: "+905000000003", email: "hoca3@mail.com", password: "123" }
+        { id: "hoca1", name: "Eğitmen Geylani", phone: "+905386482614", email: "hoca1@mail.com", password: "123" }
     ],
 
     packages: [
         {
             id: 1,
-            title: "Okuma Paketi", 
-            description: "Kural dışı fiillerin morfolojik çekim mantığını algoritmik olarak kavrayın.", 
-            duration: "12 Saat",
+            title: "Elif-Bâ ve Temel Okuma (A1 Başlangıç)", 
+            description: "Harflerin mahreçleri, bitişik yazım kuralları ve temel seviye okuma pratikleri.", 
+            duration: "10 Saat",
             price: "450 ₺",
-            requirements: ["Arapça harfleri okuyabilmek", "A1 seviyesi temel kelime bilgisi"],
-            target: "Öğrencinin yavaş okuma problemini çözerek, harekesiz metinlerde kelime köklerini hızlıca tanımasını sağlamak."
+            requirements: ["Arapçaya sıfırdan başlayanlar içindir."],
+            target: "Öğrencinin yavaş okuma problemini ortadan kaldırmak ve Kur'an veya basit metin okumaya akıcı bir giriş yapmasını sağlamak."
         },
         {
             id: 2,
-            title: "Sarf ve Nahiv Laboratuvarı", 
-            description: "Arapça dilbilgisinin temellerini uygulamalı metinler ve testler üzerinden pekiştirin.",
-            duration: "24 Saat",
-            price: "850 ₺",
-            requirements: ["Okuma Paketi'ni bitirmiş olmak veya dengi bir seviyede olmak"],
-            target: "Cümle içindeki ögelerin (fail, meful vb.) irabını doğru yapamama sorununu ortadan kaldırmak."
+            title: "Temel Sarf ve Nahiv (A2 Giriş)", 
+            description: "İsim ve Fiil cümleleri, kelime çekim mantığı ve kural dışı fiiller.",
+            duration: "20 Saat",
+            price: "750 ₺",
+            requirements: ["Harfleri ve harekeleri akıcı okuyabilmek"],
+            target: "Cümle kurulumundaki temel mantığı kavramak ve fiil çekimlerindeki ezber zorluğunu algoritmik bir yöntemle çözmek."
         },
         {
             id: 3,
-            title: "İleri Seviye Metin Çevirisi", 
-            description: "Klasik ve modern Arapça metinleri analiz ederek akademik çeviri yeteneğinizi geliştirin.",
-            duration: "36 Saat",
-            price: "1250 ₺",
-            requirements: ["B1 seviyesi gramer hakimiyeti", "Temel sözlük kullanım becerisi"],
-            target: "Akademik ve edebi metinlerdeki karmaşık cümle yapılarını anadil doğallığında Türkçeye çevirebilmek."
+            title: "Kapsamlı Cümle Analizi (B1 Orta)", 
+            description: "Harekesiz metinleri doğru okuyabilmek için uygulamalı dilbilgisi ve İrab.",
+            duration: "30 Saat",
+            price: "1150 ₺",
+            requirements: ["A2 seviyesi gramer ve kelime bilgisi"],
+            target: "Cümle içindeki ögelerin (fail, meful, muzafun ileyh vb.) harekesini doğru tahmin edememe ve irabını yapamama sorununu gidermek."
+        },
+        {
+            id: 4,
+            title: "Haber ve Modern Metin Çevirisi (B2 İleri Orta)", 
+            description: "Modern standart Arapça (Fusha) ile güncel medya ve haber metinleri çevirisi.",
+            duration: "40 Saat",
+            price: "1600 ₺",
+            requirements: ["B1 seviyesi metinleri rahat okuyabilmek", "Sözlük kullanım becerisi"],
+            target: "Güncel, siyasi ve sosyal metinlerdeki kalıp ifadeleri tanımak ve Türkçeye anadil doğallığında çevirebilme yeteneği kazanmak."
+        },
+        {
+            id: 5,
+            title: "Klasik ve Akademik Metinler (C1 İleri)", 
+            description: "YDS/YÖKDİL sınavlarına hazırlık ve klasik eserlerde (Tefsir, Hadis vb.) anlam çözümleri.",
+            duration: "50 Saat",
+            price: "2200 ₺",
+            requirements: ["İleri seviye nahiv bilgisi", "Geniş kelime dağarcığı"],
+            target: "Akademik sınavlardaki ve edebi/klasik metinlerdeki karmaşık, uzun ve iç içe geçmiş cümle yapılarını kolayca analiz edebilmek."
+        },
+        {
+            id: 6,
+            title: "Belağat ve İfade Sanatı (C2 Uzman)", 
+            description: "Arapçanın edebi derinliği; Meâni, Beyân ve Bedi ilimlerine giriş.",
+            duration: "45 Saat",
+            price: "2500 ₺",
+            requirements: ["C1 seviyesi yetkinliği", "Arapça ile tam bir hakimiyet"],
+            target: "Metinlerdeki mecazları, teşbihleri ve edebi sanatları fark ederek edebi ve Kur'ani metinlerin asıl ruhunu kavrayabilmek."
         }
     ],
 
     onlinePackages: [
-        { id: 101, name: "Günlük Pratik ve Konuşma", price: 1500, desc: "Cümle kurarken duraksamaları azaltmak için yoğun Arapça diyalog pratiği.", hours: "10 Saat / Ay", material: "PDF & Ses Kayıtları" },
-        { id: 102, name: "Aktif Kelime Hafızası", price: 1800, desc: "Sık kullanılan fiilleri konuşma anında hızlıca hatırlama ve çekimleme.", hours: "12 Saat / Ay", material: "Kelime Kartları & Alıştırmalar" },
-        { id: 103, name: "YDS/YÖKDİL Metin Çözümleme", price: 2500, desc: "İleri seviye Arapça metin okuma ve eğitmenle karşılıklı analiz.", hours: "16 Saat / Ay", material: "Çıkmış Sorular & İleri Seviye Metinler" }
+        { id: 101, name: "A1-A2 Pratik Konuşma (Muhadese)", price: 1500, desc: "Cümle kurarken duraksamaları ve özgüven eksikliğini gidermek için yoğun günlük diyalog pratiği.", hours: "10 Saat / Ay", material: "PDF Diyaloglar & Ses Kayıtları" },
+        { id: 102, name: "B1-B2 Aktif Kelime Hafızası", price: 1800, desc: "Öğrenilen fakat konuşma anında hatırlanamayan kelime ve fiilleri zihinde aktif hale getirme çalışmaları.", hours: "12 Saat / Ay", material: "Kelime Kartları & Anlık Çeviri Testleri" },
+        { id: 103, name: "YDS/YÖKDİL Taktikleri", price: 2500, desc: "Sınavda zaman kaybettiren paragraf soruları ve boşluk doldurma mantığı üzerine birebir eğitmen analizi.", hours: "16 Saat / Ay", material: "Çıkmış Sorular & Özel Taktik Notları" },
+        { id: 104, name: "C1-C2 İleri Seviye Konuşma Kulübü", price: 3000, desc: "Tamamen Arapça yürütülen, siyaset, edebiyat ve güncel meselelerin tartışıldığı ileri düzey oturumlar.", hours: "20 Saat / Ay", material: "Makaleler & Medya Analizleri" }
     ]
 };
 
@@ -84,14 +110,6 @@ let teacherSchedules = {
     "hoca1": [
         { name: "Salı - Perşembe - Cumartesi Programı", slots: null, data: { "10:50 - 11:30": "dolu", "13:50 - 14:30": "dolu" }, startH: 10, endH: 16 },
         { name: "Cuma Programı", slots: null, data: { "14:40 - 15:20": "dolu", "18:50 - 19:30": "dolu" }, startH: 13, endH: 20 }
-    ],
-    "hoca2": [
-        { name: "Pazartesi - Çarşamba Programı", slots: null, data: { "13:00 - 13:40": "dolu", "18:50 - 19:30": "dolu" }, startH: 13, endH: 21 },
-        { name: "Cumartesi Programı", slots: null, data: { "11:40 - 12:20": "dolu" }, startH: 10, endH: 15 }
-    ],
-    "hoca3": [
-        { name: "Hafta İçi Her Gün (Akşam)", slots: null, data: { "18:00 - 18:40": "dolu", "18:50 - 19:30": "dolu" }, startH: 18, endH: 22 },
-        { name: "Pazar Programı", slots: null, data: { "10:40 - 11:20": "dolu" }, startH: 9, endH: 14 }
     ]
 };
 
@@ -111,6 +129,22 @@ const firebaseConfig = {
 let isFirebaseReady = false;
 
 (function loadAppData() {
+    // Versiyon kontrolü: Eğer paketler güncellenmişse eskisini silip yeni paketleri yükle
+    const PACKAGE_VERSION = "vArapca-1.0";
+    if (localStorage.getItem('packageVersion') !== PACKAGE_VERSION) {
+        localStorage.removeItem('mockOfflinePackages');
+        localStorage.removeItem('mockOnlinePackages');
+        localStorage.setItem('packageVersion', PACKAGE_VERSION);
+    }
+
+    // Öğretmen verilerini sıfırlama (Sadece Geylani hoca ve Farketmez kalsın diye)
+    const TEACHER_VERSION = "vTeacher-1.1";
+    if (localStorage.getItem('teacherVersion') !== TEACHER_VERSION) {
+        localStorage.removeItem('mockTeachers');
+        localStorage.removeItem('mockSchedules');
+        localStorage.setItem('teacherVersion', TEACHER_VERSION);
+    }
+
     const savedT = localStorage.getItem('mockTeachers');
     const savedS = localStorage.getItem('mockSchedules');
     const savedA = localStorage.getItem('mockTeacherApps');
@@ -170,6 +204,13 @@ if (typeof firebase !== 'undefined' && firebaseConfig.apiKey !== "YOUR_API_KEY")
 function initAppAsGuest() {
     appState.currentUser = "Misafir Öğrenci";
     appState.userRole = "student";
+    appState.purchasedPackages = [];
+    appState.selectedOfflinePackages = [];
+    appState.currentPackageId = null;
+    appState.currentKazanim = 1;
+    if(appState.studentProgress["self"]) {
+        appState.studentProgress["self"][appState.currentUser] = {};
+    }
     updateHeaderUI();
     initApp();
 }
@@ -380,6 +421,16 @@ function basariliGiris(userEmail, userPhone = "") {
     
     if (!isFirebaseReady) {
         localStorage.setItem('mockSession', JSON.stringify({ email: userEmail, phone: userPhone, role: selectedRole }));
+        
+        // Eğer öğrenci giriş yapıyorsa verilerini yükle
+        if (selectedRole === 'student') {
+            let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+            if (users[userEmail]) {
+                appState.purchasedPackages = users[userEmail].purchasedPackages || [];
+                if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
+                appState.studentProgress["self"][userEmail] = users[userEmail].progress || {};
+            }
+        }
     }
     
     // Modal varsa kapat
@@ -417,6 +468,12 @@ function updateHeaderUI() {
     // Eğer Header'da giriş butonu koymak isterseniz
     const headerLoginBtn = document.getElementById('header-login-btn');
     if(headerLoginBtn) headerLoginBtn.style.display = isGuest ? 'inline-block' : 'none';
+
+    // Öğrenci profili butonu
+    const profileBtn = document.getElementById('nav-student-profile');
+    if (profileBtn) {
+        profileBtn.style.display = (!isGuest && appState.userRole === 'student') ? 'inline-block' : 'none';
+    }
 
     // Aktif ders kontrolünü tetikle
     checkActiveLessonStatus();
@@ -534,7 +591,7 @@ function initApp() {
 }
 
 function changeView(viewName, isBackAction = false) {
-    const sections = ['dashboard-section', 'offline-section', 'online-section', 'checkout-section', 'admin-section', 'teacher-section'];
+    const sections = ['dashboard-section', 'offline-section', 'online-section', 'checkout-section', 'admin-section', 'teacher-section', 'student-profile-section'];
     sections.forEach(sec => {
         let el = document.getElementById(sec);
         if(el) el.style.display = 'none';
@@ -545,6 +602,9 @@ function changeView(viewName, isBackAction = false) {
 
     if (viewName === 'dashboard-section') {
         document.getElementById('dashboard-section').style.display = 'block';
+    } else if (viewName === 'student-profile-section') {
+        document.getElementById('student-profile-section').style.display = 'block';
+        renderStudentProfile();
     } else if (viewName === 'offline-list') {
         document.getElementById('offline-section').style.display = 'block';
         document.getElementById('package-list-area').style.display = 'grid';
@@ -611,6 +671,69 @@ function goBack() {
     appState.viewHistory.pop();
     const previousView = appState.viewHistory[appState.viewHistory.length - 1] || 'dashboard-section';
     changeView(previousView, true);
+}
+
+function toggleStudentProfile() {
+    if (appState.currentView === 'student-profile-section') {
+        changeView('dashboard-section');
+    } else {
+        changeView('student-profile-section');
+    }
+}
+
+function renderStudentProfile() {
+    const profileSection = document.getElementById('student-profile-section');
+    if (!profileSection) return;
+
+    let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+    let user = users[appState.currentUser] || {};
+    
+    let html = `
+        <div class="glass-card" style="margin-bottom: 20px;">
+            <h2 style="color: #20C997; margin-bottom: 10px;">Öğrenci Profili</h2>
+            <p><strong>Ad Soyad:</strong> ${user.name || 'Belirtilmedi'}</p>
+            <p><strong>E-posta:</strong> ${appState.currentUser}</p>
+            <p><strong>Telefon:</strong> ${appState.currentUserPhone}</p>
+            <p><strong>Meslek:</strong> ${user.profession || 'Belirtilmedi'}</p>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px;">Satın Aldığım Çevrimdışı Paketler</h3>
+        <div class="package-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+    `;
+
+    if (appState.purchasedPackages.length === 0) {
+        html += `<p style="grid-column: 1/-1;">Henüz satın alınmış bir paketiniz bulunmuyor.</p>`;
+    } else {
+        appState.purchasedPackages.forEach(pkgId => {
+            const pkg = appState.packages.find(p => p.id === pkgId);
+            if (!pkg) return;
+            
+            // İlerleme verisini çek
+            const progressObj = appState.studentProgress["self"] && appState.studentProgress["self"][appState.currentUser] ? appState.studentProgress["self"][appState.currentUser] : {};
+            const savedStep = progressObj[pkgId] || 1;
+            const progressPercent = Math.round((savedStep / appState.totalKazanimCount) * 100);
+
+            html += `
+                <div class="package-card" style="border: 2px solid #20C997; cursor:pointer; flex-direction: column; align-items: stretch;" onclick="startPackage(${pkg.id}, '${pkg.title.replace(/'/g, "\\'")}')">
+                    <h3 style="margin-top:0;">${pkg.title}</h3>
+                    
+                    <div style="margin-top: 15px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:5px;">
+                            <span>İlerleme: %${progressPercent}</span>
+                            <span>Adım: ${savedStep} / ${appState.totalKazanimCount}</span>
+                        </div>
+                        <div style="width: 100%; background: #e9ecef; border-radius: 4px; height: 8px; overflow: hidden;">
+                            <div style="width: ${progressPercent}%; height: 100%; background: #20C997;"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" style="width: 100%; margin-top: 15px;">Derse Devam Et</button>
+                </div>
+            `;
+        });
+    }
+
+    html += `</div>`;
+    profileSection.innerHTML = html;
 }
 
 /* ==========================================
@@ -732,7 +855,11 @@ function bookOfflinePackages() {
 function startPackage(packageId, packageName) {
     if (appState.purchasedPackages.includes(packageId)) {
         appState.currentPackageId = packageId;
-        appState.currentKazanim = 1;
+        
+        // Kaydedilmiş ilerlemeyi yükle
+        const progressObj = appState.studentProgress["self"] && appState.studentProgress["self"][appState.currentUser] ? appState.studentProgress["self"][appState.currentUser] : {};
+        appState.currentKazanim = progressObj[packageId] || 1;
+        
         document.getElementById('current-package-title').innerText = packageName;
         renderKazanimTimeline();
         loadKazanimData();
@@ -1204,28 +1331,34 @@ function confirmPurchase() {
         };
         appState.pendingLessons.push(pendingLesson);
 
-        let whatsappUrl = "";
         let alertMessage = "";
 
         if (selectedTeacherId === "any" || !selectedTeacherId) {
-            const adminPhone = "905386482614"; 
-            const message = `Sistemde Yeni Havuz Randevusu!\nÖğrenci: ${appState.currentUser}\nPaketler: ${pkgsNames}\nTarih/Saat: ${appState.selectedSlots.join(', ')}\n\nPanele girip dersi onaylayabilirsiniz.`;
-            whatsappUrl = `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`;
-            alertMessage = "Randevunuz açık havuza düştü. Müsait olan eğitmenimiz dersi onayladığında sisteme yansıyacaktır. WhatsApp üzerinden detayları iletmek için yönlendiriliyorsunuz...";
+            alertMessage = "Randevu talebiniz sistemdeki ortak havuza başarıyla iletildi. Müsait olan bir eğitmenimiz dersi onayladığında sistem üzerinden bilgilendirileceksiniz.";
         } else {
             const selectedTeacher = appState.teachers.find(t => t.id === selectedTeacherId);
             const teacherFirstName = selectedTeacher.name.split(' ')[1] || selectedTeacher.name; 
-            const message = `Merhaba ${teacherFirstName} Hocam, Kidef Arapça üzerinden doğrudan size yeni bir randevu talebi geldi.\n\nÖğrenci: ${appState.currentUser}\nPaketler: ${pkgsNames}\nTarih/Saat: ${appState.selectedSlots.join(', ')}\n\nLütfen panele girip dersi onaylayın.`;
-            whatsappUrl = `https://wa.me/${selectedTeacher.phone.replace('+','')}?text=${encodeURIComponent(message)}`;
-            alertMessage = "Randevunuz eğitmeninize iletildi. WhatsApp'a yönlendiriliyorsunuz...";
+            alertMessage = `Randevu talebiniz doğrudan ${teacherFirstName} Hocaya sistem üzerinden iletildi. Öğretmeniniz onayladığında takviminize düşecektir.`;
         }
 
         alert(alertMessage);
-        window.open(whatsappUrl, '_blank');
         
         changeView('dashboard-section');
         return;
     }
+
+function saveStudentData() {
+    if (appState.userRole === 'student') {
+        let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+        if (users[appState.currentUser]) {
+            users[appState.currentUser].purchasedPackages = appState.purchasedPackages;
+            if (appState.studentProgress["self"] && appState.studentProgress["self"][appState.currentUser]) {
+                users[appState.currentUser].progress = appState.studentProgress["self"][appState.currentUser];
+            }
+            localStorage.setItem('mockUsers', JSON.stringify(users));
+        }
+    }
+}
 
     if (appState.paymentType === 'offline_multiple') {
         appState.selectedOfflinePackages.forEach(id => {
@@ -1233,6 +1366,7 @@ function confirmPurchase() {
                 appState.purchasedPackages.push(id);
             }
         });
+        saveStudentData();
         alert("Satın alma işleminiz onaylandı! Seçtiğiniz tüm eğitimlere artık erişebilirsiniz.");
         appState.selectedOfflinePackages = [];
         changeView('offline-list');
@@ -1247,6 +1381,7 @@ function confirmPurchase() {
         if(!appState.purchasedPackages.includes(pkg.id)) {
             appState.purchasedPackages.push(pkg.id);
         }
+        saveStudentData();
         alert(`Ödeme onaylandı! "${pkg.title}" hesabınıza tanımlandı.`);
         appState.viewHistory.pop();
         startPackage(pkg.id, pkg.title);
@@ -1284,6 +1419,13 @@ function simulateAnswer(isCorrect) {
     if(isCorrect) {
         if(appState.currentKazanim < appState.totalKazanimCount) {
             appState.currentKazanim++;
+            
+            // İlerlemeyi kaydet
+            if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
+            if (!appState.studentProgress["self"][appState.currentUser]) appState.studentProgress["self"][appState.currentUser] = {};
+            appState.studentProgress["self"][appState.currentUser][appState.currentPackageId] = appState.currentKazanim;
+            saveStudentData();
+
             renderKazanimTimeline();
             loadKazanimData();
         } else {
@@ -1337,8 +1479,22 @@ function renderAdminPanel() {
             </details>
 
             <details class="admin-details" name="admin-accordion">
+                <summary class="admin-summary">
+                    <span style="display: inline-flex; align-items: center;">
+                        Sistemdeki Tüm Randevu Talepleri
+                        ${(appState.pendingLessons && appState.pendingLessons.length > 0) ? `
+                            <svg style="width:24px; height:24px; fill:#e74c3c; margin-left: 10px;" viewBox="0 0 24 24">
+                                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                            </svg>
+                        ` : ''}
+                    </span>
+                </summary>
+                <div id="admin-all-lessons" style="margin-top: 15px; margin-bottom: 10px; max-height: 400px; overflow-y: auto;"></div>
+            </details>
+
+            <details class="admin-details" name="admin-accordion">
                 <summary class="admin-summary">Sistemdeki Öğretmenler</summary>
-                <div id="admin-teacher-list" style="margin-top: 15px; margin-bottom: 10px;"></div>
+                <div id="admin-teacher-list" style="margin-top: 15px; margin-bottom: 10px; overflow-x: auto;"></div>
             </details>
 
             <details class="admin-details" name="admin-accordion">
@@ -1435,8 +1591,62 @@ function renderAdminPanel() {
     renderTeacherApplications();
     renderAdminTeacherList();
     renderAdminStudentList();
+    renderAdminAllLessons();
     renderAdminOfflinePackages();
     renderAdminOnlinePackages();
+}
+
+function renderAdminAllLessons() {
+    const listContainer = document.getElementById('admin-all-lessons');
+    if (!listContainer) return;
+
+    let html = '';
+    const allPending = appState.pendingLessons || [];
+    const allApproved = appState.approvedLessons || [];
+
+    if (allPending.length === 0 && allApproved.length === 0) {
+        listContainer.innerHTML = "<p>Sistemde herhangi bir randevu kaydı bulunmuyor.</p>";
+        return;
+    }
+
+    if (allPending.length > 0) {
+        html += `<h4 style="color:#F39C12; margin-bottom: 10px; display:flex; align-items:center;">
+                    <svg style="width:24px; height:24px; margin-right:8px; fill:#e74c3c;" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    Bekleyen Talepler (${allPending.length})
+                 </h4>`;
+        allPending.forEach(l => {
+            const t = appState.teachers.find(teacher => teacher.id === l.requestedTeacherId);
+            const teacherName = t ? t.name : (l.requestedTeacherId === 'any' ? 'Havuz (Herhangi Biri)' : 'Bilinmeyen');
+            html += `
+                <div class="glass-card" style="margin-bottom: 10px; border-left: 4px solid #F39C12; padding: 10px;">
+                    <strong>Öğrenci:</strong> ${l.studentEmail} (${l.studentPhone})<br>
+                    <strong>Paket:</strong> ${l.package}<br>
+                    <strong>Tarih/Saat:</strong> ${l.slots.join(', ')}<br>
+                    <strong>İstenen Öğretmen:</strong> ${teacherName}
+                </div>
+            `;
+        });
+    }
+
+    if (allApproved.length > 0) {
+        html += `<h4 style="color:#20C997; margin-top: 20px; margin-bottom: 10px;">Onaylanan / Aktif Dersler</h4>`;
+        allApproved.forEach(l => {
+            const t = appState.teachers.find(teacher => teacher.id === l.teacherId);
+            const teacherName = t ? t.name : 'Bilinmeyen';
+            html += `
+                <div class="glass-card" style="margin-bottom: 10px; border-left: 4px solid #20C997; padding: 10px;">
+                    <strong>Öğrenci:</strong> ${l.studentEmail} (${l.studentPhone})<br>
+                    <strong>Paket:</strong> ${l.package}<br>
+                    <strong>Tarih/Saat:</strong> ${l.slots.join(', ')}<br>
+                    <strong>Onaylayan Öğretmen:</strong> ${teacherName}
+                </div>
+            `;
+        });
+    }
+
+    listContainer.innerHTML = html;
 }
 
 function renderAdminTeacherScheduleEditor() {
@@ -1510,7 +1720,9 @@ function approveTeacherApplication(appId) {
         name: `Eğitmen ${namePrefix} (Yeni)`,
         phone: app.phone,
         email: app.email,
-        password: app.password
+        password: app.password,
+        cv: app.cv || 'Belirtilmedi',
+        documentName: app.documentName || 'Yok'
     });
     
     teacherSchedules[newId] = [{ name: "Varsayılan Program", slots: null, data: {}, startH: 9, endH: 17 }];
@@ -1583,14 +1795,16 @@ function renderAdminTeacherList() {
         listContainer.innerHTML = "<p>Öğretmen bulunmuyor.</p>"; return;
     }
     let html = '<table class="admin-table">';
-    html += '<tr><th>ID</th><th>İsim</th><th>Telefon</th><th>E-posta</th><th>Şifre</th><th>İşlem</th></tr>';
+    html += '<tr><th>ID</th><th>İsim</th><th>Telefon</th><th>E-posta</th><th>Şifre</th><th>CV / Belge</th><th>İşlem</th></tr>';
     appState.teachers.forEach((t, index) => {
+        let cvInfo = (t.cv || t.documentName) ? `<small style="display:block; max-width: 150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${t.cv || ''}">${t.documentName || 'CV Var'}</small>` : '-';
         html += `<tr>
             <td contenteditable="true" oninput="activateTeacherSaveBtn()" style="background: #fff8e1; border-radius: 4px; padding: 5px; outline: none;">${t.id}</td>
             <td contenteditable="true" oninput="activateTeacherSaveBtn()" style="background: #fff8e1; border-radius: 4px; padding: 5px; outline: none;">${t.name}</td>
             <td contenteditable="true" oninput="activateTeacherSaveBtn()" style="background: #fff8e1; border-radius: 4px; padding: 5px; outline: none;">${t.phone}</td>
             <td contenteditable="true" oninput="activateTeacherSaveBtn()" style="background: #fff8e1; border-radius: 4px; padding: 5px; outline: none;">${t.email || ''}</td>
             <td contenteditable="true" oninput="activateTeacherSaveBtn()" style="background: #fff8e1; border-radius: 4px; padding: 5px; outline: none;">${t.password || ''}</td>
+            <td>${cvInfo}</td>
             <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="removeTeacher('${t.id}')">Sil</button></td>
         </tr>`;
     });
@@ -1875,7 +2089,24 @@ function renderTeacherPanel() {
         <div class="glass-card">
             <h2 style="margin-bottom: 20px;">🎓 Öğretmen Kontrol Paneli - ${activeTeacher.name}</h2>
 
-            <details class="admin-details" name="teacher-accordion" open>
+            <details class="admin-details" name="teacher-accordion">
+                <summary class="admin-summary">👤 Profilim</summary>
+                <div style="margin-top: 15px; margin-bottom: 25px; padding-left: 15px; border-left: 3px solid #20C997;">
+                    <p><strong>Ad Soyad:</strong> ${activeTeacher.name}</p>
+                    <p><strong>E-posta:</strong> ${activeTeacher.email}</p>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                        <strong>Şifre:</strong>
+                        <input type="password" id="teacher-profile-password" value="${activeTeacher.password}" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc; width: 200px;" disabled>
+                        <button class="btn btn-secondary" style="padding: 8px 15px; border-radius: 4px;" onclick="toggleTeacherPasswordVisibility()">👁️ Göster/Gizle</button>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button id="edit-teacher-password-btn" class="btn btn-primary" onclick="enableTeacherPasswordEdit()">Şifreyi Değiştir</button>
+                        <button id="save-teacher-password-btn" class="btn btn-success" style="display: none;" onclick="saveTeacherPassword('${activeTeacher.id}')">Yeni Şifreyi Kaydet</button>
+                    </div>
+                </div>
+            </details>
+
+            <details class="admin-details" name="teacher-accordion">
                 <summary class="admin-summary">Açık Randevu Talepleri (Bekleyenler)</summary>
                 <div id="teacher-pending-lessons" style="margin-top: 15px; margin-bottom: 10px;"></div>
             </details>
@@ -1984,6 +2215,8 @@ function approveLesson(lessonId) {
     lesson.status = "approved";
     lesson.teacherId = teacherId; // Teacher claimed it
     
+    // Bekleyenlerden silip onaylananlara taşı
+    appState.pendingLessons = appState.pendingLessons.filter(l => l.id !== lessonId);
     appState.approvedLessons.push(lesson);
 
     // Auto-fill teacher's schedule as "dolu" for these slots
@@ -2194,8 +2427,59 @@ function toggleAlarmStatus(teacherId, alarmId) {
 function removeTeacherAlarm(teacherId, alarmId) {
     appState.teacherAlarms[teacherId] = appState.teacherAlarms[teacherId].filter(a => a.id !== alarmId);
     saveTeachers();
-    renderTeacherAlarms();
+    renderTeacherAlarmsList();
 }
+
+function toggleTeacherPasswordVisibility() {
+    const input = document.getElementById('teacher-profile-password');
+    if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+}
+
+function enableTeacherPasswordEdit() {
+    const input = document.getElementById('teacher-profile-password');
+    const editBtn = document.getElementById('edit-teacher-password-btn');
+    const saveBtn = document.getElementById('save-teacher-password-btn');
+    if (input && editBtn && saveBtn) {
+        input.disabled = false;
+        input.type = 'text'; // Değiştirirken görsün diye
+        input.focus();
+        editBtn.style.display = 'none';
+        saveBtn.style.display = 'inline-block';
+    }
+}
+
+function saveTeacherPassword(teacherId) {
+    const input = document.getElementById('teacher-profile-password');
+    if (!input || !input.value.trim()) {
+        alert("Şifre boş olamaz.");
+        return;
+    }
+    
+    const teacher = appState.teachers.find(t => t.id === teacherId);
+    if (teacher) {
+        teacher.password = input.value.trim();
+        saveTeachers();
+        
+        // Update users mock as well so they can login with new password
+        let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+        if (users[teacher.email]) {
+            users[teacher.email].password = teacher.password;
+            localStorage.setItem('mockUsers', JSON.stringify(users));
+        }
+        
+        alert("Şifreniz başarıyla güncellendi.");
+        
+        // Reset UI
+        input.disabled = true;
+        input.type = 'password';
+        document.getElementById('edit-teacher-password-btn').style.display = 'inline-block';
+        document.getElementById('save-teacher-password-btn').style.display = 'none';
+    }
+}
+
+
 
 function renderTeacherScheduleEditor() {
     const editor = document.getElementById('teacher-schedule-editor');
