@@ -197,28 +197,37 @@ function saveTeachers() {
 if (typeof firebase !== 'undefined' && isFirebaseReady) {
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-            // Firestore'dan kullanıcı verisini çek
+            let sessionRole = localStorage.getItem('activeSessionRole') || selectedRole;
+            
             db.collection('users').doc(user.email).get().then(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    selectedRole = data.role || 'student';
-                    
-                    if (selectedRole === 'student') {
-                        appState.purchasedPackages = data.purchasedPackages || [];
-                        if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
-                        appState.studentProgress["self"][user.email] = data.progress || {};
+                const data = doc.exists ? doc.data() : { role: 'student', phone: '' };
+                
+                // Yetki kontrolleri
+                if (sessionRole === 'admin') {
+                    if (user.email !== 'gdmrbg7541@gmail.com') {
+                        alert("Yönetici yetkiniz bulunmamaktadır.");
+                        firebase.auth().signOut();
+                        return;
                     }
-
-                    basariliGiris(user.email, data.phone);
-                } else {
-                    // Belki admin'dir
-                    if (user.email === 'gdmrbg7541@gmail.com') {
-                        selectedRole = 'admin';
-                        basariliGiris(user.email, "");
-                    } else {
-                        basariliGiris(user.email, "");
+                } else if (sessionRole === 'teacher') {
+                    const isTeacher = appState.teachers.some(t => t.email === user.email) || data.role === 'teacher';
+                    if (!isTeacher) {
+                        alert("Öğretmen yetkiniz bulunmamaktadır veya hesabınız henüz onaylanmamıştır.");
+                        firebase.auth().signOut();
+                        return;
                     }
                 }
+
+                selectedRole = sessionRole;
+                
+                if (selectedRole === 'student') {
+                    appState.purchasedPackages = data.purchasedPackages || [];
+                    if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
+                    appState.studentProgress["self"][user.email] = data.progress || {};
+                }
+
+                basariliGiris(user.email, data.phone);
+
             }).catch(err => {
                 console.error("Firestore okuma hatası:", err);
                 basariliGiris(user.email, "");
@@ -372,8 +381,9 @@ function authIslemi() {
         return;
     }
 
-    // E-posta hafızaya kaydet
+    // E-posta ve aktif seans rolünü hafızaya kaydet
     localStorage.setItem('savedEmail', email);
+    localStorage.setItem('activeSessionRole', selectedRole);
 
     // Yönetici Firebase Auth ile girecek, eğer Firebase yoksa ve rol admin ise
     if (!isFirebaseReady && selectedRole === "admin") {
@@ -749,7 +759,8 @@ function goBack() {
 
 function toggleStudentProfile() {
     if (appState.currentView === 'student-profile-section') {
-        changeView('dashboard-section');
+        const details = document.getElementById('student-info-details');
+        if (details) details.open = !details.open;
     } else {
         changeView('student-profile-section');
     }
@@ -763,13 +774,15 @@ function renderStudentProfile() {
     let user = users[appState.currentUser] || {};
     
     let html = `
-        <div class="glass-card" style="margin-bottom: 20px;">
-            <h2 style="color: #20C997; margin-bottom: 10px;">Öğrenci Profili</h2>
-            <p><strong>Ad Soyad:</strong> ${user.name || 'Belirtilmedi'}</p>
-            <p><strong>E-posta:</strong> ${appState.currentUser}</p>
-            <p><strong>Telefon:</strong> ${appState.currentUserPhone}</p>
-            <p><strong>Meslek:</strong> ${user.profession || 'Belirtilmedi'}</p>
-        </div>
+        <details class="admin-details" id="student-info-details" open style="margin-bottom: 20px;">
+            <summary class="admin-summary">👤 Öğrenci Profili</summary>
+            <div class="glass-card" style="margin-top: 15px;">
+                <p><strong>Ad Soyad:</strong> ${user.name || 'Belirtilmedi'}</p>
+                <p><strong>E-posta:</strong> ${appState.currentUser}</p>
+                <p><strong>Telefon:</strong> ${appState.currentUserPhone}</p>
+                <p><strong>Meslek:</strong> ${user.profession || 'Belirtilmedi'}</p>
+            </div>
+        </details>
         
         <h3 style="margin-top: 30px; margin-bottom: 15px;">Satın Aldığım Çevrimdışı Paketler</h3>
         <div class="package-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">

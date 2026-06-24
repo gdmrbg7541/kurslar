@@ -270,7 +270,17 @@
                         <h3 style="color:#4facfe; margin-top:0;" id="checkout-auth-title">İşleme Devam Etmek İçin Giriş Yapın</h3>
                         <p style="font-size:0.9rem; color:rgba(0,0,0,0.6);">Ödemenizin ve paketinizin hesabınıza işlenebilmesi için kayıt olmanız veya giriş yapmanız gereklidir.</p>
                         
-                        <div class="form-group mt-20">
+                        <div class="form-group mt-20" id="checkout-student-name-group" style="display: none;">
+                            <label>İsim Soyisim</label>
+                            <input type="text" id="checkout-student-name" placeholder="Örn: Ali Yılmaz">
+                        </div>
+                        
+                        <div class="form-group" id="checkout-student-profession-group" style="display: none;">
+                            <label>Meslek / Bölüm (İsteğe Bağlı)</label>
+                            <input type="text" id="checkout-student-profession" placeholder="Örn: İlahiyat Öğrencisi">
+                        </div>
+
+                        <div class="form-group">
                             <label>E-posta Adresi</label>
                             <input type="email" id="checkout-email" placeholder="ornek@mail.com" required>
                         </div>
@@ -330,6 +340,8 @@
                 document.getElementById('checkout-switch-text').innerText = "Hesabınız yok mu?";
                 document.getElementById('checkout-switch-link').innerText = "Kayıt Ol";
                 document.getElementById('checkout-re-password-group').style.display = "none";
+                document.getElementById('checkout-student-name-group').style.display = "none";
+                document.getElementById('checkout-student-profession-group').style.display = "none";
                 document.getElementById('checkout-phone-group').style.display = "none";
             } else {
                 document.getElementById('checkout-auth-title').innerText = "İşleme Devam Etmek İçin Kayıt Olun";
@@ -337,6 +349,8 @@
                 document.getElementById('checkout-switch-text').innerText = "Zaten hesabınız var mı?";
                 document.getElementById('checkout-switch-link').innerText = "Giriş Yap";
                 document.getElementById('checkout-re-password-group').style.display = "block";
+                document.getElementById('checkout-student-name-group').style.display = "block";
+                document.getElementById('checkout-student-profession-group').style.display = "block";
                 document.getElementById('checkout-phone-group').style.display = "block";
             }
         }
@@ -384,14 +398,16 @@
             } else {
                 const pass2 = document.getElementById('checkout-re-password').value;
                 const phone = document.getElementById('checkout-phone').value.trim();
+                const sName = document.getElementById('checkout-student-name').value.trim();
+                const sProf = document.getElementById('checkout-student-profession').value.trim();
                 if (pass !== pass2) { errorEl.innerText = "Şifreler uyuşmuyor."; return; }
                 
                 firebase.auth().createUserWithEmailAndPassword(email, pass)
                 .then((userCredential) => { 
                     db.collection('users').doc(email).set({
                         role: 'student',
-                        name: "Belirtilmedi",
-                        profession: "Belirtilmedi",
+                        name: sName || "Belirtilmedi",
+                        profession: sProf || "Belirtilmedi",
                         phone: "+90" + phone,
                         purchasedPackages: [],
                         progress: {}
