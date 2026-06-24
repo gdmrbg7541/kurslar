@@ -1468,10 +1468,10 @@ function saveStudentData() {
         }
 
         if (typeof firebase !== 'undefined' && isFirebaseReady) {
-            db.collection('users').doc(appState.currentUser).update({
+            db.collection('users').doc(appState.currentUser).set({
                 purchasedPackages: appState.purchasedPackages,
                 progress: appState.studentProgress["self"] ? appState.studentProgress["self"][appState.currentUser] : {}
-            }).catch(err => console.error("Öğrenci verisi kaydedilemedi:", err));
+            }, { merge: true }).catch(err => console.error("Öğrenci verisi kaydedilemedi:", err));
         }
     }
 }
