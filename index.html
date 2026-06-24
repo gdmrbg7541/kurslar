@@ -367,6 +367,8 @@
             }
 
             localStorage.setItem('savedEmail', email);
+            localStorage.setItem('activeSessionRole', 'student');
+            selectedRole = 'student';
 
             if (!isFirebaseReady) {
                 let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
