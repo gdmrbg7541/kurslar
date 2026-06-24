@@ -1862,7 +1862,27 @@ function renderAdminStudentList() {
     const listContainer = document.getElementById('admin-student-list');
     if (!listContainer) return;
 
-    let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+    if (typeof firebase !== 'undefined' && isFirebaseReady) {
+        db.collection('users').get().then(snapshot => {
+            let users = {};
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.role === 'student' || !data.role) { // Eski kayıtların rolü boş olabilir
+                    users[doc.id] = data;
+                }
+            });
+            drawAdminStudentList(listContainer, users);
+        }).catch(err => {
+            console.error("Öğrenci listesi alınamadı:", err);
+            listContainer.innerHTML = "<p>Öğrenci listesi yüklenirken hata oluştu.</p>";
+        });
+    } else {
+        let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+        drawAdminStudentList(listContainer, users);
+    }
+}
+
+function drawAdminStudentList(listContainer, users) {
     let emails = Object.keys(users);
     
     if (emails.length === 0) {
@@ -1872,18 +1892,24 @@ function renderAdminStudentList() {
 
     let groups = {};
     emails.forEach(email => {
-        let firstLetter = email.charAt(0).toUpperCase();
+        let studentData = users[email];
+        let name = studentData.name && studentData.name !== "Belirtilmedi" ? studentData.name : email;
+        let firstLetter = name.charAt(0).toUpperCase();
+        
         if (!groups[firstLetter]) groups[firstLetter] = [];
         groups[firstLetter].push({ 
             email: email, 
-            phone: users[email].phone || 'Belirtilmedi',
-            name: users[email].name || 'Belirtilmedi',
-            profession: users[email].profession || 'Belirtilmedi'
+            phone: studentData.phone || 'Belirtilmedi',
+            name: studentData.name || 'Belirtilmedi',
+            profession: studentData.profession || 'Belirtilmedi'
         });
     });
 
     let html = '';
     Object.keys(groups).sort().forEach(letter => {
+        // İsimlere göre alfabetik sırala (grup içinde)
+        groups[letter].sort((a, b) => a.name.localeCompare(b.name));
+        
         html += `<div style="background: #F0F4F8; padding: 10px; margin-bottom: 15px; border-radius: 8px;">
                     <h4 style="margin: 0 0 10px 0; color: #16A085;">${letter}</h4>
                     <table class="admin-table" style="margin-bottom: 0;">
