@@ -554,12 +554,12 @@ function basariliGiris(userEmail, userPhone = "") {
 }
 
 function cikisYap() {
+    localStorage.removeItem('mockSession');
     if (isFirebaseReady) {
         firebase.auth().signOut().then(() => {
             initAppAsGuest();
         }).catch((error) => { console.error("Çıkış hatası:", error); });
     } else {
-        localStorage.removeItem('mockSession');
         initAppAsGuest();
     }
 }
@@ -1455,27 +1455,6 @@ function confirmPurchase() {
         changeView('dashboard-section');
         return;
     }
-
-function saveStudentData() {
-    if (appState.userRole === 'student') {
-        let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
-        if (users[appState.currentUser]) {
-            users[appState.currentUser].purchasedPackages = appState.purchasedPackages;
-            if (appState.studentProgress["self"] && appState.studentProgress["self"][appState.currentUser]) {
-                users[appState.currentUser].progress = appState.studentProgress["self"][appState.currentUser];
-            }
-            localStorage.setItem('mockUsers', JSON.stringify(users));
-        }
-
-        if (typeof firebase !== 'undefined' && isFirebaseReady) {
-            db.collection('users').doc(appState.currentUser).set({
-                purchasedPackages: appState.purchasedPackages,
-                progress: appState.studentProgress["self"] ? appState.studentProgress["self"][appState.currentUser] : {}
-            }, { merge: true }).catch(err => console.error("Öğrenci verisi kaydedilemedi:", err));
-        }
-    }
-}
-
     if (appState.paymentType === 'offline_multiple') {
         appState.selectedOfflinePackages.forEach(id => {
             if (!appState.purchasedPackages.includes(id)) {
@@ -1504,6 +1483,25 @@ function saveStudentData() {
     }
 }
 
+function saveStudentData() {
+    if (appState.userRole === 'student') {
+        let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
+        if (users[appState.currentUser]) {
+            users[appState.currentUser].purchasedPackages = appState.purchasedPackages;
+            if (appState.studentProgress["self"] && appState.studentProgress["self"][appState.currentUser]) {
+                users[appState.currentUser].progress = appState.studentProgress["self"][appState.currentUser];
+            }
+            localStorage.setItem('mockUsers', JSON.stringify(users));
+        }
+
+        if (typeof firebase !== 'undefined' && isFirebaseReady) {
+            db.collection('users').doc(appState.currentUser).set({
+                purchasedPackages: appState.purchasedPackages,
+                progress: appState.studentProgress["self"] ? appState.studentProgress["self"][appState.currentUser] : {}
+            }, { merge: true }).catch(err => console.error("Öğrenci verisi kaydedilemedi:", err));
+        }
+    }
+}
 /* ==========================================
    8. DERS İÇERİK VE QUIZ
    ========================================== */
