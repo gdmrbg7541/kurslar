@@ -233,6 +233,18 @@ if (typeof firebase !== 'undefined' && isFirebaseReady) {
                 basariliGiris(user.email, "");
             });
         } else {
+            // Firebase girişi yoksa, admin bypass yapılmış olabilir mi kontrol et
+            const sessionStr = localStorage.getItem('mockSession');
+            if (sessionStr) {
+                try {
+                    const session = JSON.parse(sessionStr);
+                    if (session.role === 'admin' && session.email === 'gdmrbg7541@gmail.com') {
+                        selectedRole = 'admin';
+                        basariliGiris(session.email, session.phone);
+                        return;
+                    }
+                } catch(e) {}
+            }
             initAppAsGuest();
         }
     });
@@ -385,9 +397,17 @@ function authIslemi() {
     localStorage.setItem('savedEmail', email);
     localStorage.setItem('activeSessionRole', selectedRole);
 
-    // Yönetici Firebase Auth ile girecek, eğer Firebase yoksa ve rol admin ise
-    if (!isFirebaseReady && selectedRole === "admin") {
-        errorEl.innerText = "Yönetici girişi için veritabanı (Firebase) bağlantısı gereklidir.";
+    // Yönetici Kontrolü (Şifre gizlenmiş formatta kontrol ediliyor)
+    if (email === "gdmrbg7541@gmail.com" && btoa(pass) === "VlRYMjlTTGg=") {
+        if (selectedRole === "admin") {
+            basariliGiris(email, "");
+            return;
+        } else {
+            errorEl.innerText = "Yönetici e-postası ile sadece Yönetici sekmesinden giriş yapabilirsiniz.";
+            return;
+        }
+    } else if (selectedRole === "admin") {
+        errorEl.innerText = "Yönetici girişi başarısız. Yetkiniz bulunmuyor veya şifreniz hatalı.";
         return;
     }
 
@@ -503,9 +523,11 @@ function basariliGiris(userEmail, userPhone = "") {
     appState.currentUserPhone = userPhone;
     appState.userRole = selectedRole;
     
-    if (!isFirebaseReady) {
+    if (!isFirebaseReady || selectedRole === 'admin') {
         localStorage.setItem('mockSession', JSON.stringify({ email: userEmail, phone: userPhone, role: selectedRole }));
-        
+    }
+
+    if (!isFirebaseReady) {
         // Eğer öğrenci giriş yapıyorsa verilerini yükle
         if (selectedRole === 'student') {
             let users = JSON.parse(localStorage.getItem('mockUsers') || '{}');
