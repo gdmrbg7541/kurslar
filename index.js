@@ -106,11 +106,19 @@ let appState = {
     ]
 };
 
+function getDefaultSchedule() {
+    const days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+    return days.map(day => ({
+        name: day,
+        slots: null,
+        data: {},
+        startH: 9,
+        endH: 17
+    }));
+}
+
 let teacherSchedules = {
-    "hoca1": [
-        { name: "Salı - Perşembe - Cumartesi Programı", slots: null, data: { "10:50 - 11:30": "dolu", "13:50 - 14:30": "dolu" }, startH: 10, endH: 16 },
-        { name: "Cuma Programı", slots: null, data: { "14:40 - 15:20": "dolu", "18:50 - 19:30": "dolu" }, startH: 13, endH: 20 }
-    ]
+    "hoca1": getDefaultSchedule()
 };
 
 
@@ -145,7 +153,7 @@ if (!firebase.apps.length) {
     }
 
     // Öğretmen verilerini sıfırlama (Sadece Geylani hoca ve Farketmez kalsın diye)
-    const TEACHER_VERSION = "vTeacher-1.1";
+    const TEACHER_VERSION = "vTeacher-1.2";
     if (localStorage.getItem('teacherVersion') !== TEACHER_VERSION) {
         localStorage.removeItem('mockTeachers');
         localStorage.removeItem('mockSchedules');
@@ -226,7 +234,7 @@ if (typeof firebase !== 'undefined' && isFirebaseReady) {
                     appState.studentProgress["self"][user.email] = data.progress || {};
                 }
 
-                basariliGiris(user.email, data.phone);
+                basariliGiris(user.email, data.phone, data.name);
 
             }).catch(err => {
                 console.error("Firestore okuma hatası:", err);
@@ -240,7 +248,7 @@ if (typeof firebase !== 'undefined' && isFirebaseReady) {
                     const session = JSON.parse(sessionStr);
                     if (session.role === 'admin' && session.email === 'gdmrbg7541@gmail.com') {
                         selectedRole = 'admin';
-                        basariliGiris(session.email, session.phone);
+                        basariliGiris(session.email, session.phone, session.name);
                         return;
                     }
                 } catch(e) {}
@@ -262,7 +270,15 @@ if (typeof firebase !== 'undefined' && isFirebaseReady) {
     }).catch(err => console.log(err));
 
     db.collection('global').doc('teacherSchedules').get().then(doc => {
-        if (doc.exists) teacherSchedules = doc.data().schedules || {};
+        if (doc.exists) {
+            teacherSchedules = doc.data().schedules || {};
+            // Geylani Hoca (hoca1) için eski 2 günlük öbeği zorla 7 güne çevir
+            if (teacherSchedules['hoca1'] && teacherSchedules['hoca1'].length !== 7) {
+                teacherSchedules['hoca1'] = getDefaultSchedule();
+                db.collection('global').doc('teacherSchedules').set({ schedules: teacherSchedules }, { merge: true });
+                localStorage.setItem('mockSchedules', JSON.stringify(teacherSchedules));
+            }
+        }
     });
 
 } else {
@@ -273,7 +289,7 @@ if (typeof firebase !== 'undefined' && isFirebaseReady) {
             try {
                 const session = JSON.parse(sessionStr);
                 selectedRole = session.role || 'student';
-                basariliGiris(session.email, session.phone);
+                basariliGiris(session.email, session.phone, session.name);
             } catch(e) {
                 initAppAsGuest();
             }
@@ -471,17 +487,17 @@ function authIslemi() {
                     errorEl.innerText = "Yetkisiz giriş veya hatalı şifre. Kaydınız yönetici tarafından henüz onaylanmamış olabilir.";
                     return;
                 }
-                // HATA DÜZELTMESİ: currentUser olarak name değil email kaydedilmeli
-                basariliGiris(teacher.email, teacher.phone || "");
+                basariliGiris(teacher.email, teacher.phone || "", teacher.name || "");
                 return;
             } else {
                 if (!users[email] || users[email].password !== pass) {
                     errorEl.innerText = "Kullanıcı bulunamadı veya şifre hatalı. Lütfen önce kayıt olun."; 
                     return;
                 }
+                basariliGiris(email, users[email] ? users[email].phone : "", users[email] ? users[email].name : "");
+                return;
             }
         }
-        basariliGiris(email, users[email] ? users[email].phone : "");
         return;
     }
 
@@ -518,13 +534,14 @@ function authIslemi() {
     }
 }
 
-function basariliGiris(userEmail, userPhone = "") {
+function basariliGiris(userEmail, userPhone = "", userName = "") {
     appState.currentUser = userEmail;
     appState.currentUserPhone = userPhone;
+    appState.currentUserName = userName;
     appState.userRole = selectedRole;
     
     if (!isFirebaseReady || selectedRole === 'admin') {
-        localStorage.setItem('mockSession', JSON.stringify({ email: userEmail, phone: userPhone, role: selectedRole }));
+        localStorage.setItem('mockSession', JSON.stringify({ email: userEmail, phone: userPhone, name: userName, role: selectedRole }));
     }
 
     if (!isFirebaseReady) {
@@ -725,7 +742,7 @@ function changeView(viewName, isBackAction = false) {
         const step2 = document.getElementById('online-step-2');
         const step3 = document.getElementById('online-step-3');
         if (step1) {
-            step1.style.maxHeight = "1000px";
+            step1.style.maxHeight = "3000px";
             step1.style.opacity = "1";
             const hTotal = document.getElementById('step1-header-total');
             if(hTotal) hTotal.style.display = 'none';
@@ -1060,6 +1077,7 @@ function checkOnlineStep1() {
 
             step2.style.opacity = "1";
             step2.style.pointerEvents = "auto";
+            step2.style.maxHeight = "3000px";
             
             // Eğer hoca seçimi önceden yapılmışsa veya varsayılan varsa takvimi hemen render et
             const tSelect = document.getElementById('teacher-select');
@@ -1076,9 +1094,8 @@ function checkOnlineStep1() {
 
 function editOnlineStep1() {
     const step1 = document.getElementById('online-step-1');
-    const step2 = document.getElementById('online-step-2');
     if (step1) {
-        if (step1.style.maxHeight === "1000px") {
+        if (step1.style.maxHeight === "3000px") {
             // Zaten açıksa daralt
             if (appState.selectedOnlinePackages.length > 0) {
                 checkOnlineStep1(); // Seçim varsa tamamla mantığı çalışsın
@@ -1088,7 +1105,7 @@ function editOnlineStep1() {
             }
         } else {
             // Kapalıysa aç
-            step1.style.maxHeight = "1000px";
+            step1.style.maxHeight = "3000px";
             step1.style.opacity = "1";
             
             const headerTotal = document.getElementById('step1-header-total');
@@ -1101,17 +1118,17 @@ function editOnlineStep2() {
     const step2 = document.getElementById('online-step-2');
     const step1 = document.getElementById('online-step-1');
     if (step2) {
-        if (step2.style.maxHeight === "1000px") {
+        if (step2.style.maxHeight === "3000px") {
             // Daralt
             step2.style.maxHeight = "70px";
             step2.style.opacity = "0.8";
         } else {
             // Aç
-            step2.style.maxHeight = "1000px";
+            step2.style.maxHeight = "3000px";
             step2.style.opacity = "1";
             
             // "eğitmen kısmına basınca paketler kapansın"
-            if (step1 && step1.style.maxHeight === "1000px") {
+            if (step1 && step1.style.maxHeight === "3000px") {
                 step1.style.maxHeight = "70px";
                 step1.style.opacity = "0.8";
                 const headerTotal = document.getElementById('step1-header-total');
@@ -1142,7 +1159,7 @@ function checkOnlineStep2() {
 
             step3.style.opacity = "1";
             step3.style.pointerEvents = "auto";
-            step3.style.maxHeight = "1000px";
+            step3.style.maxHeight = "3000px";
         }
     } else {
         alert("Lütfen takvimden yeşil renkli en az bir ders saati seçin.");
@@ -1153,7 +1170,7 @@ function editOnlineStep3() {
     const step2 = document.getElementById('online-step-2');
     const step3 = document.getElementById('online-step-3');
     if (step3) {
-        if (step3.style.maxHeight === "1000px") {
+        if (step3.style.maxHeight === "3000px") {
             // Daralt
             step3.style.maxHeight = "70px";
             step3.style.opacity = "0.8";
@@ -1163,7 +1180,7 @@ function editOnlineStep3() {
                 alert("Lütfen önce takvimden saat seçimi yapınız.");
                 return;
             }
-            step3.style.maxHeight = "1000px";
+            step3.style.maxHeight = "3000px";
             step3.style.opacity = "1";
             if(step2) {
                 step2.style.maxHeight = "70px";
@@ -1233,37 +1250,31 @@ function renderCalendar() {
         slots: generateSlots(g.startH, g.endH)
     }));
 
-    const useAccordion = groups.length > 2;
+    cal.innerHTML = `
+        <div style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; margin-top: 15px;">
+            ${groups.map(group => {
+                const slotsHtml = group.slots.map(s => {
+                    const durumStr = group.data && group.data[s.time] ? group.data[s.time] : "musait";
+                    const isDolu = durumStr !== "musait";
+                    const click = (s.isBreak || isDolu) ? "" : `onclick="selectSlot('${group.name}', '${s.time}', this)"`;
+                    const cName = s.isBreak ? "break" : (isDolu ? "dolu" : "musait");
+                    const icon = s.isBreak ? "☕" : (isDolu ? "❌" : "");
+                    return `<div class="slot ${cName}" style="margin-bottom: 8px;" ${click}>${icon} ${s.time}</div>`;
+                }).join('');
 
-    cal.innerHTML = groups.map((group, index) => {
-        const slotsHtml = group.slots.map(s => {
-            const durum = group.data && group.data[s.time] ? group.data[s.time] : "musait";
-            const click = (s.isBreak || durum === "dolu") ? "" : `onclick="selectSlot('${group.name}', '${s.time}', this)"`;
-            const cName = s.isBreak ? "break" : (durum === "dolu" ? "dolu" : "musait");
-            const icon = s.isBreak ? "☕" : (durum === "dolu" ? "❌" : "");
-            return `<div class="slot ${cName}" ${click}>${icon} ${s.time}</div>`;
-        }).join('');
-
-        if (useAccordion) {
-            return `
-            <details class="day-group" ${index === 0 ? 'open' : ''}>
-                <summary class="day-title">${group.name}</summary>
-                <div class="slots-grid">
-                    ${slotsHtml}
+                return `
+                <div style="min-width: 140px; flex: 1; display: flex; flex-direction: column;">
+                    <div class="day-title" style="text-align: center; margin-bottom: 10px; padding: 10px; background: #e3f2fd; border-radius: 8px; font-weight: bold; color: #1f5f99; border: 1px solid rgba(31, 95, 153, 0.1);">
+                        ${group.name}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        ${slotsHtml}
+                    </div>
                 </div>
-            </details>
-            `;
-        } else {
-            return `
-            <div class="day-group">
-                <span class="day-title">${group.name}</span>
-                <div class="slots-grid">
-                    ${slotsHtml}
-                </div>
-            </div>
-            `;
-        }
-    }).join('');
+                `;
+            }).join('')}
+        </div>
+    `;
     
     appState.selectedSlots = []; 
     updateSummary();
@@ -1432,6 +1443,7 @@ function confirmPurchase() {
             id: 'lesson_' + Date.now(),
             studentEmail: appState.currentUser,
             studentPhone: appState.currentUserPhone,
+            studentName: appState.currentUserName || "Öğrenci",
             package: pkgsNames,
             slots: [...appState.selectedSlots],
             requestedTeacherId: selectedTeacherId,
@@ -1773,19 +1785,31 @@ function renderAdminTeacherScheduleEditor() {
     const groups = groupsRaw.map(g => ({ ...g, slots: generateSlots(g.startH, g.endH) }));
 
     let html = '<p>Saatlerin üzerine tıklayarak <strong>Müsait</strong> veya <strong>Dolu</strong> olarak değiştirebilirsiniz.</p>';
-    html += groups.map(group => `
-        <div class="day-group">
-            <span class="day-title">${group.name}</span>
-            <div class="slots-grid">
-                ${group.slots.map(s => {
-                    const durum = group.data && group.data[s.time] ? group.data[s.time] : "musait";
-                    if (s.isBreak) return `<div class="slot break">${s.time}</div>`;
-                    const label = durum === "dolu" ? "Dolu" : "Müsait";
-                    return `<div class="slot ${durum}" onclick="toggleSlotStatus('${teacherId}', '${group.name}', '${s.time}', this, true)" style="cursor: pointer;">${s.time}<br><small style="font-size:0.7rem;">${label}</small></div>`;
-                }).join('')}
-            </div>
+    html += `
+        <div style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; margin-top: 15px;">
+            ${groups.map(group => {
+                const slotsHtml = group.slots.map(s => {
+                    const durumStr = group.data && group.data[s.time] ? group.data[s.time] : "musait";
+                    if (s.isBreak) return `<div class="slot break" style="margin-bottom: 8px;">${s.time}</div>`;
+                    const isDolu = durumStr !== "musait";
+                    const cName = isDolu ? "dolu" : "musait";
+                    const label = isDolu ? (durumStr === "dolu" ? "Dolu" : `Dolu (${durumStr})`) : "Müsait";
+                    return `<div class="slot ${cName}" onclick="toggleSlotStatus('${teacherId}', '${group.name}', '${s.time}', this, true)" style="cursor: pointer; margin-bottom: 8px;">${s.time}<br><small style="font-size:0.7rem;">${label}</small></div>`;
+                }).join('');
+
+                return `
+                <div style="min-width: 140px; flex: 1; display: flex; flex-direction: column;">
+                    <div class="day-title" style="text-align: center; margin-bottom: 10px; padding: 10px; background: #e3f2fd; border-radius: 8px; font-weight: bold; color: #1f5f99; border: 1px solid rgba(31, 95, 153, 0.1);">
+                        ${group.name}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        ${slotsHtml}
+                    </div>
+                </div>
+                `;
+            }).join('')}
         </div>
-    `).join('');
+    `;
     editor.innerHTML = html;
 }
 
@@ -1839,7 +1863,7 @@ function approveTeacherApplication(appId) {
         documentName: app.documentName || 'Yok'
     });
     
-    teacherSchedules[newId] = [{ name: "Varsayılan Program", slots: null, data: {}, startH: 9, endH: 17 }];
+    teacherSchedules[newId] = getDefaultSchedule();
     
     appState.teacherApplications.splice(appIndex, 1);
     saveTeachers();
@@ -2036,7 +2060,7 @@ function addTeacher() {
 
     phone = "+90" + phone;
     appState.teachers.push({ id, name, phone, email, password });
-    teacherSchedules[id] = [{ name: "Varsayılan Program", slots: null, data: {}, startH: 9, endH: 17 }];
+    teacherSchedules[id] = getDefaultSchedule();
     
     saveTeachers();
     alert("Öğretmen eklendi!");
@@ -2211,6 +2235,10 @@ function renderTeacherPanel() {
     const teacherSection = document.getElementById('teacher-section');
     if (!teacherSection) return;
 
+    if ("Notification" in window && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+
     // Get active teacher ID based on logged in email
     const activeTeacher = appState.teachers.find(t => t.email === appState.currentUser);
     if (!activeTeacher) {
@@ -2277,6 +2305,12 @@ function renderTeacherPanel() {
                             <div class="form-group" style="flex:3; min-width: 200px;">
                                 <label style="color: rgba(255,255,255,0.8);">Not / Görev</label>
                                 <input type="text" id="new-alarm-note" placeholder="Örn: Ayşe'nin okuma ödevini kontrol et" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 10px; font-size: 1.1rem; width: 100%; box-sizing: border-box;">
+                                <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                                    <span style="font-size: 0.8rem; color: #ccc;">Hızlı Seçim:</span>
+                                    <button class="btn" style="background: rgba(32, 201, 151, 0.2); color: #20c997; border: 1px solid #20c997; padding: 3px 8px; font-size: 0.75rem; border-radius: 12px; cursor: pointer;" onclick="document.getElementById('new-alarm-note').value='Derse Hazırlık'">Derse Hazırlık</button>
+                                    <button class="btn" style="background: rgba(253, 126, 20, 0.2); color: #fd7e14; border: 1px solid #fd7e14; padding: 3px 8px; font-size: 0.75rem; border-radius: 12px; cursor: pointer;" onclick="document.getElementById('new-alarm-note').value='Ödev Kontrolü'">Ödev Kontrolü</button>
+                                    <button class="btn" style="background: rgba(13, 110, 253, 0.2); color: #0d6efd; border: 1px solid #0d6efd; padding: 3px 8px; font-size: 0.75rem; border-radius: 12px; cursor: pointer;" onclick="document.getElementById('new-alarm-note').value='Mola'">Mola</button>
+                                </div>
                             </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; flex-wrap: wrap; gap: 10px;">
@@ -2344,6 +2378,14 @@ function renderPendingLessons() {
     container.innerHTML = html;
 }
 
+function subtractMinutes(timeStr, mins) {
+    let [h, m] = timeStr.split(':').map(Number);
+    let date = new Date();
+    date.setHours(h, m, 0, 0);
+    date.setMinutes(date.getMinutes() - mins);
+    return date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+}
+
 function approveLesson(lessonId) {
     const lesson = appState.pendingLessons.find(l => l.id === lessonId);
     if (!lesson) return;
@@ -2371,12 +2413,26 @@ function approveLesson(lessonId) {
             const group = teacherSchedules[teacherId].find(g => g.name === groupName);
             if (group) {
                 if (!group.data) group.data = {};
-                group.data[timePart] = "dolu";
+                // Öğrencinin adını dolu slot'a yazdır
+                group.data[timePart] = lesson.studentName || "Öğrenci";
                 updatedCount++;
+                
+                // Otomatik alarm ekle (dersten 5 dakika önce)
+                const startTimeStr = timePart.substring(0, 5); // "14:00"
+                const alarmTime = subtractMinutes(startTimeStr, 5);
+                if (!appState.teacherAlarms) appState.teacherAlarms = {};
+                if (!appState.teacherAlarms[teacherId]) appState.teacherAlarms[teacherId] = [];
+                appState.teacherAlarms[teacherId].push({
+                    id: Date.now() + Math.random(),
+                    time: alarmTime,
+                    note: `Ders Başlıyor: ${lesson.studentName || 'Öğrenci'}`,
+                    isCompleted: false,
+                    isNotified: false
+                });
             }
         });
         if (updatedCount > 0) {
-            alert(`Ders başarıyla onaylandı!\nTakviminizdeki ilgili ${updatedCount} saat dilimi otomatik olarak "Dolu" işaretlendi.`);
+            alert(`Ders başarıyla onaylandı!\nTakviminizdeki ilgili ${updatedCount} saat dilimi otomatik olarak öğrenciye rezerve edildi.`);
         } else {
             alert("Ders başarıyla onaylandı!");
         }
@@ -2494,25 +2550,36 @@ function renderTeacherAlarms() {
         return;
     }
 
-    let html = '';
+    let html = '<div style="position: relative; padding-left: 20px; border-left: 2px solid #e3f2fd; margin-left: 10px;">';
     alarms.forEach(alarm => {
-        const bg = alarm.isCompleted ? "#E9EEF5" : "#FFF3CD";
-        const textDec = alarm.isCompleted ? "line-through" : "none";
-        const color = alarm.isCompleted ? "#888" : "#856404";
+        const isPast = alarm.isCompleted;
+        const iconColor = isPast ? "#ccc" : "#20C997";
+        const cardBg = isPast ? "#f8f9fa" : "#ffffff";
+        const textColor = isPast ? "#999" : "#333";
+        const textDec = isPast ? "line-through" : "none";
+        const shadow = isPast ? "none" : "0 4px 12px rgba(0,0,0,0.05)";
+        const border = isPast ? "1px solid #eee" : "1px solid #e3f2fd";
         
         html += `
-        <div style="background: ${bg}; border: 1px solid #ddd; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="text-decoration: ${textDec}; color: ${color};">
-                <strong style="font-size: 1.1rem; margin-right: 10px;">${alarm.time}</strong> ${alarm.note}
-            </div>
-            <div style="display: flex; gap: 5px;">
-                <button class="btn btn-sm ${alarm.isCompleted ? 'btn-secondary' : 'btn-success'}" onclick="toggleAlarmStatus('${teacherId}', ${alarm.id})">
-                    ${alarm.isCompleted ? 'Geri Al' : 'Tamamlandı'}
-                </button>
-                <button class="btn btn-danger btn-sm" onclick="removeTeacherAlarm('${teacherId}', ${alarm.id})">Sil</button>
+        <div style="position: relative; margin-bottom: 20px;">
+            <div style="position: absolute; left: -29px; top: 15px; width: 16px; height: 16px; border-radius: 50%; background: ${iconColor}; border: 3px solid white; box-shadow: 0 0 0 2px ${iconColor}33;"></div>
+            <div style="background: ${cardBg}; border: ${border}; box-shadow: ${shadow}; padding: 15px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s ease;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: ${iconColor};">${alarm.time}</div>
+                    <div style="text-decoration: ${textDec}; color: ${textColor}; font-size: 1.1rem;">
+                        ${alarm.note}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-sm" style="background: ${isPast ? '#e9ecef' : '#e8f9f4'}; color: ${isPast ? '#6c757d' : '#20c997'}; border: none; border-radius: 8px; font-weight: bold;" onclick="toggleAlarmStatus('${teacherId}', ${alarm.id})">
+                        ${isPast ? 'Geri Al' : '✓ Tamamla'}
+                    </button>
+                    <button class="btn btn-sm" style="background: #ffebe9; color: #dc3545; border: none; border-radius: 8px; font-weight: bold;" onclick="removeTeacherAlarm('${teacherId}', ${alarm.id})">Sil</button>
+                </div>
             </div>
         </div>`;
     });
+    html += '</div>';
     container.innerHTML = html;
 }
 
@@ -2646,19 +2713,33 @@ function renderTeacherScheduleEditor() {
     const groups = groupsRaw.map(g => ({ ...g, slots: generateSlots(g.startH, g.endH) }));
 
     let html = '<p>Saatlerin üzerine tıklayarak <strong>Müsait</strong> veya <strong>Dolu</strong> olarak değiştirebilirsiniz.</p>';
-    html += groups.map(group => `
-        <div class="day-group">
-            <span class="day-title">${group.name}</span>
-            <div class="slots-grid">
-                ${group.slots.map(s => {
-                    const durum = group.data && group.data[s.time] ? group.data[s.time] : "musait";
-                    if (s.isBreak) return `<div class="slot break">${s.time}</div>`;
-                    const label = durum === "dolu" ? "Dolu" : "Müsait";
-                    return `<div class="slot ${durum}" onclick="toggleSlotStatus('${teacherId}', '${group.name}', '${s.time}', this, false)" style="cursor: pointer;">${s.time}<br><small style="font-size:0.7rem;">${label}</small></div>`;
-                }).join('')}
-            </div>
+    html += `
+        <div style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 15px; margin-top: 15px;">
+            ${groups.map(group => {
+                const slotsHtml = group.slots.map(s => {
+                    const durumStr = group.data && group.data[s.time] ? group.data[s.time] : "musait";
+                    if (s.isBreak) return `<div class="slot break" style="margin-bottom: 8px;">${s.time}</div>`;
+                    
+                    const isDolu = durumStr !== "musait";
+                    const cName = isDolu ? "dolu" : "musait";
+                    const displayLabel = isDolu ? (durumStr === "dolu" ? "Dolu" : durumStr) : "Müsait";
+                    
+                    return `<div class="slot ${cName}" onclick="toggleSlotStatus('${teacherId}', '${group.name}', '${s.time}', this, false)" style="cursor: pointer; margin-bottom: 8px;">${s.time}<br><small style="font-size:0.7rem;">${displayLabel}</small></div>`;
+                }).join('');
+
+                return `
+                <div style="min-width: 140px; flex: 1; display: flex; flex-direction: column;">
+                    <div class="day-title" style="text-align: center; margin-bottom: 10px; padding: 10px; background: #e3f2fd; border-radius: 8px; font-weight: bold; color: #1f5f99; border: 1px solid rgba(31, 95, 153, 0.1);">
+                        ${group.name}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        ${slotsHtml}
+                    </div>
+                </div>
+                `;
+            }).join('')}
         </div>
-    `).join('');
+    `;
     editor.innerHTML = html;
 }
 
@@ -2715,46 +2796,95 @@ function playSineWaveAlarm() {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
+        const oscillator2 = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         
         oscillator.type = 'sine';
-        // 440'tan 880'e hızla çıkan dikkat çekici bir "bip" sesi
-        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); 
-        oscillator.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
+        oscillator2.type = 'triangle';
         
-        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
+        oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2); // E5
+        oscillator.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.4); // G5
+        
+        oscillator2.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        oscillator2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.2);
+        oscillator2.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.4);
+
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
         
         oscillator.connect(gainNode);
+        oscillator2.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         
         oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 1);
+        oscillator2.start();
+        oscillator.stop(audioCtx.currentTime + 1.5);
+        oscillator2.stop(audioCtx.currentTime + 1.5);
     } catch(e) {
-        console.warn("Ses çalınamadı (kullanıcı etkileşimi gerekebilir):", e);
+        console.warn("Ses çalınamadı:", e);
     }
 }
 
-function showAlarmToast(note) {
-    const toast = document.createElement('div');
-    toast.innerHTML = `<strong style="font-size:1.3rem;">⏰ Hatırlatıcı</strong><br><span style="font-size:1.1rem; margin-top:5px; display:inline-block;">${note}</span>`;
-    toast.style.cssText = "position: fixed; top: 20px; right: 20px; z-index: 9999; background: #E74C3C; color: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 20px rgba(231,76,60,0.5); transition: opacity 0.5s ease, transform 0.5s ease; opacity: 0; transform: translateX(50px);";
-    document.body.appendChild(toast);
+function showAlarmModal(alarm, teacherId) {
+    const modal = document.createElement('div');
+    modal.style.cssText = "position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s ease;";
     
-    // Animasyonu tetikle
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 16px; padding: 30px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.9); transition: 0.3s ease;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">⏰</div>
+            <h2 style="margin: 0 0 10px 0; color: #333;">${alarm.time}</h2>
+            <p style="font-size: 1.2rem; color: #555; margin-bottom: 25px;">${alarm.note}</p>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-secondary" onclick="snoozeAlarm(this, '${teacherId}', ${alarm.id}, 5)" style="flex: 1; min-width: 120px;">5 Dk Ertele</button>
+                <button class="btn btn-primary" onclick="dismissAlarm(this, '${teacherId}', ${alarm.id})" style="flex: 1; min-width: 120px;">Tamamla</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
     requestAnimationFrame(() => {
-        toast.style.opacity = "1";
-        toast.style.transform = "translateX(0)";
+        modal.style.opacity = "1";
+        modal.children[0].style.transform = "scale(1)";
     });
 
-    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
-
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateX(50px)";
-        setTimeout(() => toast.remove(), 500);
-    }, 10000);
+    if(navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
 }
+
+window.snoozeAlarm = function(btn, teacherId, alarmId, mins) {
+    const modal = btn.closest('div').parentNode.parentNode;
+    modal.style.opacity = "0";
+    setTimeout(() => modal.remove(), 300);
+    
+    const alarm = appState.teacherAlarms[teacherId].find(a => a.id === alarmId);
+    if (alarm) {
+        let [h, m] = alarm.time.split(':').map(Number);
+        let date = new Date();
+        date.setHours(h, m, 0, 0);
+        date.setMinutes(date.getMinutes() + mins);
+        alarm.time = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
+        alarm.isNotified = false;
+        
+        saveTeachers();
+        if (document.getElementById('teacher-alarms-list')) renderTeacherAlarms();
+    }
+};
+
+window.dismissAlarm = function(btn, teacherId, alarmId) {
+    const modal = btn.closest('div').parentNode.parentNode;
+    modal.style.opacity = "0";
+    setTimeout(() => modal.remove(), 300);
+    
+    const alarm = appState.teacherAlarms[teacherId].find(a => a.id === alarmId);
+    if (alarm) {
+        alarm.isCompleted = true;
+        saveTeachers();
+        if (document.getElementById('teacher-alarms-list')) renderTeacherAlarms();
+    }
+};
 
 // 30 saniyede bir saati kontrol et
 setInterval(() => {
@@ -2779,7 +2909,15 @@ setInterval(() => {
             alarm.isNotified = true; // Sadece o dakika içinde bir kez çalması için flag
             alarmTriggered = true;
             playSineWaveAlarm();
-            showAlarmToast(alarm.note);
+            showAlarmModal(alarm, teacherId);
+            
+            // Masaüstü Bildirimi Gönder
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification("⏰ Ders Hatırlatıcısı", {
+                    body: alarm.note,
+                    icon: "https://cdn-icons-png.flaticon.com/512/825/825590.png"
+                });
+            }
         }
     });
 
