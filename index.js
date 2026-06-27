@@ -795,86 +795,50 @@ function initApp() {
                 <div id="guest-name-prompt" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #111; z-index: 3000; display: flex; align-items: center; justify-content: center; flex-direction: column; font-family: 'Inter', sans-serif;">
                     <div class="glass-card" style="padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
                         <h2 style="color: white; margin-bottom: 20px;">Canlı Derse Katıl</h2>
+                        <p style="color: #aaa; margin-bottom: 20px; font-size: 0.95rem;">Derse katılmak için lütfen adınızı yazın.</p>
                         
-                        <button onclick="joinWithGoogle(this)" style="width: 100%; padding: 15px; font-size: 1.1rem; background: white; color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                            <svg width="20" height="20" viewBox="0 0 48 48">
-                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                            </svg>
-                            Google ile Giriş Yap (Önerilen)
-                        </button>
-
-                        <div style="display: flex; align-items: center; color: #888; margin-bottom: 20px;">
-                            <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.2);"></div>
-                            <span style="padding: 0 10px; font-size: 0.9rem;">veya misafir olarak</span>
-                            <div style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.2);"></div>
-                        </div>
-
-                        <input type="text" id="guest-name-input" placeholder="Adınız Soyadınız" style="width: 100%; padding: 15px; border-radius: 8px; border: none; margin-bottom: 15px; font-size: 1.1rem; background: rgba(255,255,255,0.9); color: #333; outline: none; box-sizing: border-box;">
-                        <button onclick="joinAsGuest()" style="width: 100%; padding: 15px; font-size: 1.1rem; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Sadece İsimle Katıl</button>
+                        <input type="text" id="guest-name-input" placeholder="Örn: Ali Yılmaz" style="width: 100%; padding: 15px; border-radius: 8px; border: none; margin-bottom: 20px; font-size: 1.1rem; background: rgba(255,255,255,0.9); color: #333; outline: none; box-sizing: border-box; text-align: center;">
+                        <button onclick="joinAsGuest(this)" style="width: 100%; padding: 15px; font-size: 1.1rem; background: #20C997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: background 0.2s;" onmouseover="this.style.background='#17a589'" onmouseout="this.style.background='#20C997'">Odaya Gir</button>
                     </div>
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', promptHTML);
             
-            let isGoogleAuthInProgress = false;
-            window.joinWithGoogle = function(btnElement) {
-                if (isGoogleAuthInProgress) return;
-                isGoogleAuthInProgress = true;
-                if (btnElement) {
-                    btnElement.innerHTML = "Bağlanıyor...";
-                    btnElement.style.opacity = "0.7";
-                }
-                
-                const provider = new firebase.auth.GoogleAuthProvider();
-                firebase.auth().signInWithPopup(provider).then((result) => {
-                    isGoogleAuthInProgress = false;
-                    const prompt = document.getElementById('guest-name-prompt');
-                    if (prompt) prompt.remove();
-                }).catch(err => {
-                    isGoogleAuthInProgress = false;
-                    if (btnElement) {
-                        btnElement.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Google ile Giriş Yap`;
-                        btnElement.style.opacity = "1";
-                    }
-                    console.error("Google Auth Hatası:", err);
-                    
-                    if(err.code === 'auth/operation-not-allowed') {
-                        alert("ÖNEMLİ: Firebase konsolundan 'Google' girişini aktif (Enable) yapmanız gerekiyor!");
-                    } else if (err.code === 'auth/popup-closed-by-user') {
-                        console.warn("Kullanıcı veya tarayıcı pencereyi kapattı.");
-                        // Sadece sessizce uyarı ver, alert ile kullanıcıyı korkutma
-                        const gInput = document.getElementById('guest-name-input');
-                        if(gInput) gInput.placeholder = "Google iptal edildi, isminizi yazın...";
-                    } else {
-                        alert("Giriş yapılamadı: " + err.message);
-                    }
-                });
-            };
-
-            window.joinAsGuest = async function() {
+            window.joinAsGuest = async function(btnElement) {
                 const name = document.getElementById('guest-name-input').value.trim();
                 if (!name) {
                     alert("Lütfen adınızı girin.");
                     return;
                 }
+                
+                if (btnElement) {
+                    btnElement.innerHTML = "Odaya Bağlanıyor...";
+                    btnElement.style.opacity = "0.7";
+                    btnElement.disabled = true;
+                }
+
                 appState.currentUserName = name;
-                document.getElementById('guest-name-prompt').remove();
                 
                 try {
                     if (firebase.auth().currentUser === null) {
                         await firebase.auth().signInAnonymously();
                     }
+                    const prompt = document.getElementById('guest-name-prompt');
+                    if (prompt) prompt.remove();
+                    
+                    openLiveClassRoom();
+                    const modalContent = document.getElementById('live-modal-content');
+                    if (modalContent && !modalContent.classList.contains('maximized')) {
+                        modalContent.classList.add('maximized');
+                    }
                 } catch(e) {
-                    console.warn("Anonim giriş yapılamadı, devam ediliyor...", e);
-                }
-                
-                openLiveClassRoom();
-                const modalContent = document.getElementById('live-modal-content');
-                if (modalContent && !modalContent.classList.contains('maximized')) {
-                    modalContent.classList.add('maximized');
+                    console.warn("Anonim giriş yapılamadı:", e);
+                    alert("Odaya bağlanırken sunucu engeline takıldı. Firebase kurallarınızı kontrol edin.");
+                    if (btnElement) {
+                        btnElement.innerHTML = "Odaya Gir";
+                        btnElement.style.opacity = "1";
+                        btnElement.disabled = false;
+                    }
                 }
             };
         } else {
