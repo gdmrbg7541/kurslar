@@ -1143,50 +1143,48 @@ async function openLiveClassRoom() {
                 videoElement.srcObject = stream;
             }
             document.getElementById('live-wait-msg').style.display = 'block';
-            
-            // WebRTC Başlat
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlRoomId = urlParams.get('liveRoom');
-            
-            if (urlRoomId) {
-                // Linkle gelen kişi (Öğrenci)
-                appState.activeRoomId = urlRoomId;
-                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğretmene Bağlanılıyor...</p>';
-                
-                // Ekran paylaşma ve link butonlarını gizle
-                const btnScreenContainer = document.getElementById('btn-screen').parentElement;
-                if (btnScreenContainer && btnScreenContainer.classList.contains('tooltip-container')) {
-                    btnScreenContainer.style.display = 'none';
-                } else {
-                    document.getElementById('btn-screen').style.display = 'none';
-                }
-                const btnInvite = document.getElementById('btn-invite');
-                if (btnInvite) btnInvite.style.display = 'none';
-
-                if (typeof initWebRTCRoom === 'function') {
-                    await initWebRTCRoom(urlRoomId, false);
-                }
-            } else {
-                // Öğretmen odayı kendi başlatıyor
-                appState.activeRoomId = Math.random().toString(36).substring(2, 10);
-                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğrenci Bekleniyor...</p>';
-                if (typeof initWebRTCRoom === 'function') {
-                    await initWebRTCRoom(appState.activeRoomId, true);
-                }
-            }
-            
-            // Eğer 3 saniye içinde karşıdan görüntü gelmezse mesajı gizle (opsiyonel)
-            setTimeout(() => {
-                const msg = document.getElementById('live-wait-msg');
-                if(msg && msg.style.display !== 'none' && !appState.remoteStream) {
-                    // msg.style.display = 'none'; // Artık bunu siliyoruz, çünkü gerçekten gelene kadar bekleyeceğiz.
-                }
-            }, 3000);
-
         } catch (err) {
             console.error("Kamera izni reddedildi veya hata oluştu", err);
-            alert("Kamera veya mikrofona erişilemiyor. Lütfen tarayıcı izinlerini kontrol edin.");
-            document.getElementById('live-wait-msg').innerHTML = '<p style="color: #ff3b30;">Kamera Yok</p>';
+            // alert("Kamera veya mikrofona erişilemiyor. Sadece izleyici olarak katılıyorsunuz.");
+            document.getElementById('live-wait-msg').innerHTML = '<p style="color: #ff3b30; font-size: 1.2rem; font-weight: bold;">Sadece İzleyici Modu</p>';
+        }
+
+        // WebRTC Başlat (Kamera olsa da olmasa da odaya gir)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlRoomId = urlParams.get('liveRoom');
+        
+        if (urlRoomId) {
+            // Linkle gelen kişi (Öğrenci)
+            appState.activeRoomId = urlRoomId;
+            if (document.getElementById('live-wait-msg').innerHTML.includes('Sadece İzleyici Modu')) {
+                document.getElementById('live-wait-msg').innerHTML += '<p style="color: #20C997; font-size: 0.9rem;">Öğretmene Bağlanılıyor...</p>';
+            } else {
+                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğretmene Bağlanılıyor...</p>';
+            }
+            
+            // Ekran paylaşma ve link butonlarını gizle
+            const btnScreenContainer = document.getElementById('btn-screen').parentElement;
+            if (btnScreenContainer && btnScreenContainer.classList.contains('tooltip-container')) {
+                btnScreenContainer.style.display = 'none';
+            } else {
+                const bs = document.getElementById('btn-screen');
+                if (bs) bs.style.display = 'none';
+            }
+            const btnInvite = document.getElementById('btn-invite');
+            if (btnInvite) btnInvite.style.display = 'none';
+
+            if (typeof initWebRTCRoom === 'function') {
+                await initWebRTCRoom(urlRoomId, false);
+            }
+        } else {
+            // Öğretmen odayı kendi başlatıyor
+            appState.activeRoomId = Math.random().toString(36).substring(2, 10);
+            if (!document.getElementById('live-wait-msg').innerHTML.includes('Sadece İzleyici Modu')) {
+                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğrenci Bekleniyor...</p>';
+            }
+            if (typeof initWebRTCRoom === 'function') {
+                await initWebRTCRoom(appState.activeRoomId, true);
+            }
         }
     }
 }
