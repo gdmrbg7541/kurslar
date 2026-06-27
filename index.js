@@ -1,15 +1,7 @@
 /* ==========================================
-   1. GÜVENLİK VE CAYDIRICI ÖNLEMLER
+   1. GÜVENLİK VE CAYDIRICI ÖNLEMLER (DEVRE DIŞI BIRAKILDI)
    ========================================== */
-(function initSecurity() {
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'F12') e.preventDefault();
-        if (e.ctrlKey && e.shiftKey && e.key === 'I') e.preventDefault();
-        if (e.ctrlKey && e.shiftKey && e.key === 'J') e.preventDefault();
-        if (e.ctrlKey && e.key === 'u') e.preventDefault();
-    });
-})();
+// (function initSecurity() { ... })();
 
 /* ==========================================
    2. UYGULAMA DURUMU (STATE) VE HAFIZA SİSTEMİ
