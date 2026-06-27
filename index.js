@@ -1201,87 +1201,69 @@ async function openLiveClassRoom() {
     if(modal) {
         modal.style.display = 'flex';
         
-        // Setup local camera first
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            appState.localStream = stream;
-            
-            // Eğer link ile gelmişse sesi ve görüntüyü baştan kapalı başlat
-            if (appState.isInviteMode) {
-                stream.getAudioTracks().forEach(track => track.enabled = false);
-                stream.getVideoTracks().forEach(track => track.enabled = false);
-                
-                // İkonları da güncelleyelim (Kırmızı ve üstü çizili yapalım)
-                const btnMute = document.getElementById('btn-mute');
-                const btnVideo = document.getElementById('btn-video');
-                
-                const svgMicOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
-                const svgVidOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path></svg>`;
-                
-                if (btnMute) {
-                    btnMute.innerHTML = svgMicOff;
-                    btnMute.style.background = '#ff3b30';
-                }
-                if (btnVideo) {
-                    btnVideo.innerHTML = svgVidOff;
-                    btnVideo.style.background = '#ff3b30';
-                }
-                
-                // Avatar göster, kamerayı gizle
-                const localBox = document.getElementById('local-box');
-                const localAvatar = document.getElementById('local-avatar');
-                if (localBox) localBox.classList.add('camera-off');
-                if (localAvatar) localAvatar.style.display = 'flex';
-            }
-            
-            const videoElement = document.getElementById('local-video');
-            if(videoElement) {
-                videoElement.srcObject = stream;
-            }
-            document.getElementById('live-wait-msg').style.display = 'block';
-        } catch (err) {
-            console.error("Kamera izni reddedildi veya hata oluştu", err);
-            // alert("Kamera veya mikrofona erişilemiyor. Sadece izleyici olarak katılıyorsunuz.");
-            document.getElementById('live-wait-msg').innerHTML = '<p style="color: #ff3b30; font-size: 1.2rem; font-weight: bold;">Sadece İzleyici Modu</p>';
+        // Modalın tam ekran modunda açılması (Eğer class listesinde yoksa ekle)
+        const modalContent = document.getElementById('live-modal-content');
+        if (modalContent && !modalContent.classList.contains('maximized')) {
+            modalContent.classList.add('maximized');
         }
 
-        // WebRTC Başlat (Kamera olsa da olmasa da odaya gir)
         const urlParams = new URLSearchParams(window.location.search);
         const urlRoomId = urlParams.get('liveRoom');
         
         if (urlRoomId) {
-            // Linkle gelen kişi (Öğrenci)
             appState.activeRoomId = urlRoomId;
-            if (document.getElementById('live-wait-msg').innerHTML.includes('Sadece İzleyici Modu')) {
-                document.getElementById('live-wait-msg').innerHTML += '<p style="color: #20C997; font-size: 0.9rem;">Öğretmene Bağlanılıyor...</p>';
-            } else {
-                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğretmene Bağlanılıyor...</p>';
-            }
-            
-            // Ekran paylaşma ve link butonlarını gizle
-            const btnScreenContainer = document.getElementById('btn-screen').parentElement;
-            if (btnScreenContainer && btnScreenContainer.classList.contains('tooltip-container')) {
-                btnScreenContainer.style.display = 'none';
-            } else {
-                const bs = document.getElementById('btn-screen');
-                if (bs) bs.style.display = 'none';
-            }
-            const btnInvite = document.getElementById('btn-invite');
-            if (btnInvite) btnInvite.style.display = 'none';
-
-            if (typeof initWebRTCRoom === 'function') {
-                await initWebRTCRoom(urlRoomId, false);
-            }
         } else {
-            // Öğretmen odayı kendi başlatıyor
             appState.activeRoomId = Math.random().toString(36).substring(2, 10);
-            if (!document.getElementById('live-wait-msg').innerHTML.includes('Sadece İzleyici Modu')) {
-                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğrenci Bekleniyor...</p>';
-            }
-            if (typeof initWebRTCRoom === 'function') {
-                await initWebRTCRoom(appState.activeRoomId, true);
-            }
         }
+
+        const domain = 'meet.jit.si';
+        const options = {
+            roomName: 'KidefArapca_DersOdasi_' + appState.activeRoomId,
+            width: '100%',
+            height: '100%',
+            parentNode: document.querySelector('#live-class-room-container'),
+            userInfo: {
+                displayName: appState.currentUserName && appState.currentUserName !== "Misafir Öğrenci" 
+                             ? appState.currentUserName 
+                             : (appState.isInviteMode ? "Öğrenci" : "Öğretmen")
+            },
+            configOverwrite: {
+                startWithAudioMuted: appState.isInviteMode,
+                startWithVideoMuted: appState.isInviteMode,
+                disableDeepLinking: true,
+                prejoinPageEnabled: false,
+                requireDisplayName: false
+            },
+            interfaceConfigOverwrite: {
+                SHOW_JITSI_WATERMARK: false,
+                SHOW_WATERMARK_FOR_GUESTS: false,
+                TOOLBAR_BUTTONS: [
+                    'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+                    'fodeviceselection', 'hangup', 'profile', 'chat', 'recording',
+                    'livestreaming', 'etherpad', 'sharedvideo', 'settings', 'raisehand',
+                    'videoquality', 'filmstrip', 'feedback', 'stats', 'shortcuts',
+                    'tileview', 'videobackgroundblur', 'download', 'help', 'mute-everyone', 'security'
+                ]
+            }
+        };
+
+        // Eğer daha önce açılmışsa temizle
+        if (appState.jitsiApi) {
+            appState.jitsiApi.dispose();
+        }
+
+        appState.jitsiApi = new window.JitsiMeetExternalAPI(domain, options);
+        
+        // Yükleniyor yazısını gizle
+        appState.jitsiApi.on('videoConferenceJoined', () => {
+            const waitMsg = document.getElementById('live-wait-msg');
+            if(waitMsg) waitMsg.style.display = 'none';
+        });
+
+        // Kullanıcı kendi Jitsi'den çıkış yaparsa modalı kapat
+        appState.jitsiApi.on('readyToClose', () => {
+            closeLiveClassRoom();
+        });
     }
 }
 
@@ -1290,43 +1272,14 @@ function closeLiveClassRoom() {
     if(modal) {
         modal.style.display = 'none';
         
-        if(appState.localStream) {
-            appState.localStream.getTracks().forEach(track => track.stop());
-            appState.localStream = null;
+        if (appState.jitsiApi) {
+            appState.jitsiApi.dispose();
+            appState.jitsiApi = null;
         }
-        if(appState.screenStream) {
-            appState.screenStream.getTracks().forEach(track => track.stop());
-            appState.screenStream = null;
-        }
-        
-        const videoElement = document.getElementById('local-video');
-        if(videoElement) videoElement.srcObject = null;
-        
-        const screenVideoElement = document.getElementById('screen-video');
-        if(screenVideoElement) {
-            screenVideoElement.srcObject = null;
-            screenVideoElement.style.display = 'none';
-        }
-        
-        document.getElementById('live-class-room-container').classList.remove('screen-shared');
-        document.getElementById('live-wait-msg').innerHTML = '<p style="font-size: 1.2rem; margin-bottom: 10px;">Kamera Başlatılıyor...</p><p style="color: #aaa; font-size: 0.9rem;">Karşı taraf bekleniyor.</p>';
-        
-        // Reset fullscreen if active
-        if (document.fullscreenElement) {
-            document.exitFullscreen();
-        }
-        
-        // Reset sidebar
-        const sidebar = document.getElementById('live-sidebar');
-        if(sidebar) {
-            sidebar.classList.remove('open');
-        }
-        
-        // Clean up simulation
-        if(appState.simTimeout) clearTimeout(appState.simTimeout);
-        const grid = document.getElementById('participants-video-container');
-        if(grid) grid.innerHTML = '';
-        
+
+        const waitMsg = document.getElementById('live-wait-msg');
+        if(waitMsg) waitMsg.style.display = 'block';
+
         // Eğer link ile gelinmişse, geri kalan siteye erişimi engelle
         if (appState.isInviteMode) {
             document.body.innerHTML = `
@@ -1336,327 +1289,6 @@ function closeLiveClassRoom() {
                 </div>
             `;
         }
-    }
-}
-
-function toggleMute() {
-    const btn = document.getElementById('btn-mute');
-    if(appState.localStream) {
-        const audioTrack = appState.localStream.getAudioTracks()[0];
-        if(audioTrack) {
-            audioTrack.enabled = !audioTrack.enabled;
-            const svgOn = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
-            const svgOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
-            
-            btn.innerHTML = audioTrack.enabled ? svgOn : svgOff;
-            btn.style.background = audioTrack.enabled ? 'rgba(255,255,255,0.2)' : '#ff3b30';
-            
-            if (appState.pipWindow) {
-                const pipBtn = appState.pipWindow.document.getElementById('pip-btn-mute');
-                if (pipBtn) {
-                    pipBtn.innerHTML = btn.innerHTML;
-                    pipBtn.style.background = btn.style.background;
-                }
-            }
-        }
-    }
-}
-
-function toggleVideo() {
-    const btn = document.getElementById('btn-video');
-    const localBox = document.getElementById('local-box');
-    const localAvatar = document.getElementById('local-avatar');
-
-    if(appState.localStream) {
-        const videoTrack = appState.localStream.getVideoTracks()[0];
-        if(videoTrack) {
-            videoTrack.enabled = !videoTrack.enabled;
-            const svgOn = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
-            const svgOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path></svg>`;
-
-            btn.innerHTML = videoTrack.enabled ? svgOn : svgOff;
-            btn.style.background = videoTrack.enabled ? 'rgba(255,255,255,0.2)' : '#ff3b30';
-
-            if(localBox) {
-                if(videoTrack.enabled) {
-                    localBox.classList.remove('camera-off');
-                    if(localAvatar) localAvatar.style.display = 'none';
-                } else {
-                    localBox.classList.add('camera-off');
-                    if(localAvatar) localAvatar.style.display = 'flex';
-                }
-            }
-
-            if (appState.pipWindow) {
-                const pipBtn = appState.pipWindow.document.getElementById('pip-btn-video');
-                if (pipBtn) {
-                    pipBtn.innerHTML = btn.innerHTML;
-                    pipBtn.style.background = btn.style.background;
-                }
-            }
-        }
-    }
-}
-
-async function openPiPWindow() {
-    if (!('documentPictureInPicture' in window)) {
-        console.warn('Document Picture-in-Picture API is not supported in this browser.');
-        return;
-    }
-
-    try {
-        const pipWindow = await window.documentPictureInPicture.requestWindow({
-            width: 350,
-            height: 220
-        });
-
-        appState.pipWindow = pipWindow;
-
-        // Copy styles to the PiP window (essential for rendering buttons nicely)
-        [...document.styleSheets].forEach((styleSheet) => {
-            try {
-                const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
-                const style = document.createElement('style');
-                style.textContent = cssRules;
-                pipWindow.document.head.appendChild(style);
-            } catch (e) {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.type = styleSheet.type;
-                link.media = styleSheet.media;
-                link.href = styleSheet.href;
-                pipWindow.document.head.appendChild(link);
-            }
-        });
-
-        // Add Google Fonts
-        const linkFonts = document.createElement('link');
-        linkFonts.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Marhey:wght@400;600;700&display=swap";
-        linkFonts.rel = "stylesheet";
-        pipWindow.document.head.appendChild(linkFonts);
-
-        // Build PiP HTML
-        pipWindow.document.body.style.margin = "0";
-        pipWindow.document.body.style.display = "flex";
-        pipWindow.document.body.style.flexDirection = "column";
-        pipWindow.document.body.style.alignItems = "center";
-        pipWindow.document.body.style.justifyContent = "center";
-        pipWindow.document.body.style.background = "#1a1a1a";
-        pipWindow.document.body.style.fontFamily = "'Inter', sans-serif";
-        pipWindow.document.body.style.padding = "10px";
-
-        // Video Grid
-        const pipVideoGrid = document.createElement('div');
-        pipVideoGrid.style.display = "flex";
-        pipVideoGrid.style.gap = "10px";
-        pipVideoGrid.style.width = "100%";
-        pipVideoGrid.style.justifyContent = "center";
-        pipVideoGrid.style.alignItems = "center";
-        pipVideoGrid.style.marginBottom = "15px";
-
-        if (appState.localStream) {
-            // Local Video
-            const localVidBox = document.createElement('div');
-            localVidBox.className = "participant-box";
-            localVidBox.style.width = "140px";
-            localVidBox.style.height = "100px";
-            localVidBox.style.position = "relative";
-            localVidBox.style.borderRadius = "8px";
-            localVidBox.style.overflow = "hidden";
-            
-            const localVid = document.createElement('video');
-            localVid.autoplay = true;
-            localVid.muted = true;
-            localVid.playsInline = true;
-            localVid.srcObject = appState.localStream;
-            localVid.style.width = "100%";
-            localVid.style.height = "100%";
-            localVid.style.objectFit = "cover";
-            localVidBox.appendChild(localVid);
-            
-            const localLabel = document.createElement('div');
-            localLabel.className = "participant-label";
-            localLabel.innerText = "Siz";
-            localLabel.style.fontSize = "0.7rem";
-            localLabel.style.bottom = "5px";
-            localLabel.style.left = "5px";
-            localVidBox.appendChild(localLabel);
-            
-            pipVideoGrid.appendChild(localVidBox);
-            
-            // Remote Video (Simulation)
-            const remoteVidBox = document.createElement('div');
-            remoteVidBox.className = "participant-box";
-            remoteVidBox.style.width = "140px";
-            remoteVidBox.style.height = "100px";
-            remoteVidBox.style.position = "relative";
-            remoteVidBox.style.borderRadius = "8px";
-            remoteVidBox.style.overflow = "hidden";
-
-            const remoteVid = document.createElement('video');
-            remoteVid.autoplay = true;
-            remoteVid.muted = true;
-            remoteVid.playsInline = true;
-            remoteVid.srcObject = appState.localStream; // Simulate remote
-            remoteVid.style.width = "100%";
-            remoteVid.style.height = "100%";
-            remoteVid.style.objectFit = "cover";
-            remoteVid.style.transform = "scaleX(-1)";
-            remoteVid.style.filter = "hue-rotate(180deg) brightness(0.8) contrast(1.2)";
-            remoteVidBox.appendChild(remoteVid);
-            
-            const remoteLabel = document.createElement('div');
-            remoteLabel.className = "participant-label";
-            remoteLabel.innerText = "Öğrenci";
-            remoteLabel.style.fontSize = "0.7rem";
-            remoteLabel.style.bottom = "5px";
-            remoteLabel.style.left = "5px";
-            remoteVidBox.appendChild(remoteLabel);
-            
-            pipVideoGrid.appendChild(remoteVidBox);
-        }
-
-        pipWindow.document.body.appendChild(pipVideoGrid);
-
-        const container = document.createElement('div');
-        container.style.display = "flex";
-        container.style.gap = "15px";
-        
-        // Mute button
-        const btnMute = document.createElement('button');
-        btnMute.id = "pip-btn-mute";
-        btnMute.className = "live-class-btn";
-        btnMute.style.position = "relative";
-        btnMute.innerHTML = document.getElementById('btn-mute').innerHTML;
-        btnMute.style.background = document.getElementById('btn-mute').style.background || "rgba(255,255,255,0.2)";
-        btnMute.onclick = () => {
-            toggleMute(); // calls main window function
-        };
-
-        // Video button
-        const btnVideo = document.createElement('button');
-        btnVideo.id = "pip-btn-video";
-        btnVideo.className = "live-class-btn";
-        btnVideo.style.position = "relative";
-        btnVideo.innerHTML = document.getElementById('btn-video').innerHTML;
-        btnVideo.style.background = document.getElementById('btn-video').style.background || "rgba(255,255,255,0.2)";
-        btnVideo.onclick = () => {
-            toggleVideo(); // calls main window function
-        };
-
-        // Stop Share button
-        const btnStopShare = document.createElement('button');
-        btnStopShare.className = "live-class-btn";
-        btnStopShare.style.background = "#ff3b30";
-        btnStopShare.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
-        btnStopShare.title = "Paylaşımı Durdur";
-        btnStopShare.onclick = () => {
-            stopScreenShare();
-        };
-
-        container.appendChild(btnMute);
-        container.appendChild(btnVideo);
-        container.appendChild(btnStopShare);
-
-        pipWindow.document.body.appendChild(container);
-
-        // Handle PiP close event
-        pipWindow.addEventListener("pagehide", (event) => {
-            appState.pipWindow = null;
-        });
-
-    } catch (e) {
-        console.error('Failed to open PiP window:', e);
-    }
-}
-
-async function toggleScreenShare() {
-    const roomContainer = document.getElementById('live-class-room-container');
-    const screenVideo = document.getElementById('screen-video');
-    const btnScreen = document.getElementById('btn-screen');
-
-    if (!appState.screenStream) {
-        // Tarayıcının "Kullanıcı Etkileşimi" jetonunu kaybetmemek için PiP'yi hemen açıyoruz
-        let pipOpened = false;
-        if ('documentPictureInPicture' in window && !appState.pipWindow) {
-            openPiPWindow(); // async, starts immediately
-            pipOpened = true;
-        }
-
-        try {
-            let stream;
-            try {
-                // Tarayıcıya 'Pencereler' sekmesini öncelikli göstermesi için ipucu veriyoruz
-                stream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { displaySurface: 'window' }, 
-                    selfBrowserSurface: 'exclude' 
-                });
-            } catch (e) {
-                console.warn("selfBrowserSurface desteklenmiyor, varsayılan ayarlarla deneniyor", e);
-                stream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { displaySurface: 'window' } 
-                });
-            }
-            appState.screenStream = stream;
-            
-            // Ekran videolarını yerel olarak göster
-            screenVideo.srcObject = stream;
-            screenVideo.style.display = 'block';
-            roomContainer.classList.add('screen-shared');
-            
-            btnScreen.style.background = '#ff3b30';
-
-            // WebRTC ile karşı tarafa gönder
-            if (typeof peerConnection !== 'undefined' && peerConnection && peerConnection.getSenders) {
-                const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-                if (sender) {
-                    sender.replaceTrack(stream.getVideoTracks()[0]);
-                }
-            }
-
-            // Ekran paylaşımı tarayıcıdan durdurulursa yakalayalım
-            stream.getVideoTracks()[0].onended = () => {
-                stopScreenShare();
-            };
-        } catch (err) {
-            console.error("Ekran paylaşımı reddedildi veya hata oluştu", err);
-            // Kullanıcı pencere seçmekten vazgeçerse açtığımız PiP'i geri kapatalım
-            if (appState.pipWindow) {
-                appState.pipWindow.close();
-                appState.pipWindow = null;
-            }
-        }
-    } else {
-        stopScreenShare();
-    }
-}
-
-function stopScreenShare() {
-    const roomContainer = document.getElementById('live-class-room-container');
-    const screenVideo = document.getElementById('screen-video');
-    const btnScreen = document.getElementById('btn-screen');
-
-    if (appState.screenStream) {
-        appState.screenStream.getTracks().forEach(track => track.stop());
-        appState.screenStream = null;
-    }
-    
-    screenVideo.srcObject = null;
-    screenVideo.style.display = 'none';
-    roomContainer.classList.remove('screen-shared');
-    btnScreen.style.background = 'rgba(32,201,151,0.8)';
-
-    // WebRTC ekran paylaşımı iptali, kameraya dön
-    if (typeof peerConnection !== 'undefined' && peerConnection && peerConnection.getSenders && appState.localStream) {
-        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
-        if (sender) {
-            sender.replaceTrack(appState.localStream.getVideoTracks()[0]);
-        }
-    }
-
-    if (appState.pipWindow) {
-        appState.pipWindow.close();
-        appState.pipWindow = null;
     }
 }
 
@@ -2007,182 +1639,6 @@ function selectOfflinePackage(id, el) {
     if (index > -1) {
         appState.selectedOfflinePackages.splice(index, 1);
         el.classList.remove('selected');
-    } else {
-        appState.selectedOfflinePackages.push(id);
-        el.classList.add('selected');
-    }
-    
-    updateOfflineSummary();
-    renderPackages();
-}
-
-function updateOfflineSummary() {
-    const summaryDiv = document.getElementById('offline-checkout-summary');
-    const totalText = document.getElementById('offline-total-text');
-    if (!summaryDiv || !totalText) return;
-    
-    if (appState.selectedOfflinePackages.length > 0) {
-        let total = 0;
-        appState.selectedOfflinePackages.forEach(pid => {
-            const pkg = appState.packages.find(p => p.id === pid);
-            if (pkg) {
-                let priceNum = parseInt(pkg.price.replace(/[^0-9]/g, ''));
-                total += priceNum;
-            }
-        });
-        totalText.innerText = `Toplam: ${total.toLocaleString('tr-TR')} ₺`;
-        summaryDiv.style.display = 'flex';
-    } else {
-        summaryDiv.style.display = 'none';
-    }
-}
-
-function bookOfflinePackages() {
-    if (appState.selectedOfflinePackages.length === 0) return;
-    openCheckoutFlow('offline_multiple', null);
-}
-
-function startPackage(packageId, packageName) {
-    if (appState.purchasedPackages.includes(packageId)) {
-        appState.currentPackageId = packageId;
-        
-        // Kaydedilmiş ilerlemeyi yükle
-        const progressObj = appState.studentProgress["self"] && appState.studentProgress["self"][appState.currentUser] ? appState.studentProgress["self"][appState.currentUser] : {};
-        let saved = progressObj[packageId] || 1;
-        
-        const pkgData = appState.kazanimData[packageId] || { total: 40 };
-        appState.totalKazanimCount = pkgData.total;
-        
-        if (saved > appState.totalKazanimCount) {
-            // Restarting a completed package
-            saved = 1;
-            if(appState.stepResults) appState.stepResults[packageId] = {};
-            if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
-            if (!appState.studentProgress["self"][appState.currentUser]) appState.studentProgress["self"][appState.currentUser] = {};
-            appState.studentProgress["self"][appState.currentUser][packageId] = 1;
-            saveStudentData();
-        }
-        
-        appState.currentKazanim = saved;
-        
-        document.getElementById('current-package-title').innerText = packageName;
-        renderKazanimTimeline();
-        loadKazanimData();
-        changeView('active-package');
-    } else {
-        openCheckoutFlow('offline', packageId);
-    }
-}
-
-/* ==========================================
-   6. CANLI DERS RANDEVU (ONLINE)
-   ========================================== */
-function renderOnlinePackages() {
-    const listEl = document.getElementById('online-package-list');
-    if(!listEl) return;
-    
-    let html = '';
-
-    // 1. ÖZEL DERS SEÇENEĞİ (SABİT OLARAK EN ÜSTTE)
-    const isCustomSelected = appState.selectedOnlinePackages.find(x => x.id === 100);
-    const customCount = appState.customLessonCount || 0;
-    const customPrice = customCount * 400;
-    const customTopic = appState.customLessonTopic || '';
-
-    html += `
-    <div class="glass-card online-package-card ${isCustomSelected ? 'selected' : ''}" onclick="selectCustomOnlinePackage(this)" style="display:flex; align-items:center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-color: #F39C12;">
-        <div style="margin-right: 5px; font-size: 1.5rem; color: #F39C12;">
-            <i class="far ${isCustomSelected ? 'fa-check-circle' : 'fa-circle'}" id="pkg-icon-custom"></i>
-        </div>
-        <div class="online-package-info" style="flex:1; min-width: 250px;">
-            <h4 style="color: #F39C12;">🌟 Özel Ders Talep Et</h4>
-            <input type="text" id="custom-lesson-topic" placeholder="İstediğiniz konuyu yazınız" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; margin-top: 5px;" value="${customTopic}" onclick="event.stopPropagation()" oninput="updateCustomTopic(this.value)">
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 5px 10px; border-radius: 8px; border: 1px solid #eee;" onclick="event.stopPropagation()">
-            <div style="font-size: 0.8rem; color: #666; text-align: right; margin-right: 5px;">Ders Sayısı</div>
-            <button class="btn btn-sm" style="background: #e9ecef; border: none; font-size: 1.2rem; padding: 0 10px;" onclick="changeCustomLessonCount(-1)">-</button>
-            <span id="custom-lesson-count" style="font-size: 1.2rem; font-weight: bold; width: 20px; text-align: center;">${customCount}</span>
-            <button class="btn btn-sm" style="background: #e9ecef; border: none; font-size: 1.2rem; padding: 0 10px;" onclick="changeCustomLessonCount(1)">+</button>
-        </div>
-        <div class="online-package-price" style="min-width: 100px; text-align: right; color: #F39C12;">
-            <span id="custom-lesson-price">${customPrice}</span> ₺
-        </div>
-    </div>
-    `;
-
-    // 2. DİĞER STANDART PAKETLER
-    html += appState.onlinePackages.map(p => {
-        const isSelected = appState.selectedOnlinePackages.find(x => x.id === p.id);
-        
-        // Bu paket daha önce alınmış mı veya devam eden bir ders var mı?
-        const isPurchased = appState.purchasedPackages.includes(p.id) || 
-                            appState.pendingLessons.some(l => l.package.includes(p.name)) || 
-                            appState.approvedLessons.some(l => l.package.includes(p.name) && l.studentEmail === appState.currentUser);
-
-        const disabledStyle = isPurchased ? "opacity: 0.5; pointer-events: none; filter: grayscale(1);" : "";
-        const purchasedBadge = isPurchased ? `<div style="font-size:0.75rem; color:#dc3545; font-weight:bold; margin-top:5px;">Devam Eden / Satın Alınmış Ders</div>` : "";
-
-        const checkIconClass = isSelected ? 'fas fa-check-circle' : 'far fa-circle';
-
-        return `
-        <div class="glass-card online-package-card ${isSelected ? 'selected' : ''}" onclick="${isPurchased ? '' : `selectOnlinePackage(${p.id}, this)`}" style="display:flex; align-items:center; padding: 15px 20px; cursor: pointer; border: ${isSelected ? '2px solid #20C997' : '1px solid #eee'}; ${disabledStyle}">
-            <div style="margin-right: 15px; font-size: 1.5rem; color: ${isSelected ? '#20C997' : '#ccc'};">
-                <i class="${checkIconClass}" id="pkg-icon-${p.id}"></i>
-            </div>
-            <div style="flex: 1;">
-                <h4 style="margin: 0; font-size: 1.1rem; color: #333; display: flex; align-items: center;">
-                    ${p.name} ${purchasedBadge}
-                </h4>
-            </div>
-            <div style="margin-right: 15px; font-weight: bold; color: #F39C12; font-size: 1.2rem;">
-                ${(p.price || 0).toLocaleString('tr-TR')} ₺
-            </div>
-            <div onclick="openPackageModal('online', ${p.id}); event.stopPropagation();" title="Paket Detayları" style="padding: 6px 14px; font-size: 0.85rem; font-weight: bold; background: rgba(79, 172, 254, 0.1); color: #4facfe; border: 1px solid rgba(79, 172, 254, 0.4); border-radius: 20px; cursor: pointer; transition: 0.2s; white-space: nowrap; flex-shrink: 0;" onmouseover="this.style.background='#4facfe'; this.style.color='white';" onmouseout="this.style.background='rgba(79, 172, 254, 0.1)'; this.style.color='#4facfe';">
-                Detaylar
-            </div>
-        </div>`
-    }).join('');
-
-    listEl.innerHTML = html;
-}
-
-window.openPackageModal = function(type, id) {
-    const modal = document.getElementById('package-info-modal');
-    const titleEl = document.getElementById('modal-pkg-title');
-    const priceEl = document.getElementById('modal-pkg-price');
-    const footerEl = document.getElementById('modal-pkg-footer');
-    const containerEl = document.getElementById('modal-pkg-details-container');
-    
-    if (!modal || !titleEl || !priceEl || !containerEl || !footerEl) return;
-    
-    let html = '';
-    let footerHtml = `<button class="btn btn-secondary" onclick="closePackageModal()" style="width: 100%;">Kapat</button>`;
-    
-    if (type === 'offline') {
-        const pkg = appState.packages.find(p => p.id === id);
-        if (!pkg) return;
-        
-        const isPurchased = appState.purchasedPackages.includes(id);
-        
-        if (isPurchased) {
-            footerHtml = `
-                <button class="btn btn-secondary" onclick="closePackageModal()" style="width: 50%;">Kapat</button>
-                <button class="btn btn-success" onclick="closePackageModal(); startPackage(${pkg.id}, '${pkg.title.replace(/'/g, "\\'")}');" style="width: 50%;">▶ Derse Devam Et</button>
-            `;
-        }
-        
-        titleEl.innerText = pkg.title;
-        priceEl.innerText = pkg.price + ' ₺';
-        
-        html += `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-            <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; border: 1px solid #f0f0f0;">
-                <div style="font-weight: bold; color: #555; margin-bottom: 8px; font-size: 1.1rem;">⏳ Eğitim Süresi</div>
-                <div style="color: #333; font-size: 1.05rem;">${pkg.duration} Saat</div>
-            </div>
-        `;
-        
-        if (pkg.target) {
             html += `
             <div style="background: rgba(0,0,0,0.02); padding: 15px; border-radius: 12px; border: 1px solid #f0f0f0;">
                 <div style="font-weight: bold; color: #555; margin-bottom: 8px; font-size: 1.1rem;">🎯 Hedef Kazanım</div>
