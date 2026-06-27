@@ -487,19 +487,26 @@ details.day-group .slots-grid {
 }
 
 .student-calendar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 10px;
-    margin-top: 20px;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 15px; /* Scrollbar için boşluk */
+    -webkit-overflow-scrolling: touch; /* Mobilde yumuşak kaydırma */
+    align-items: stretch;
 }
 
 .calendar-day {
+    flex: 0 0 auto; 
+    min-width: 140px; /* Daha geniş alan */
+    width: 140px;
+    box-sizing: border-box;
+    margin-right: 15px; /* Kutu araları */
     background: #f8f9fa;
     border: 1px solid #e9ecef;
     border-radius: 10px;
     padding: 15px 10px;
     text-align: center;
-    min-height: 130px;
+    min-height: 150px;
     display: flex;
     flex-direction: column;
 }

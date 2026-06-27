@@ -2598,6 +2598,11 @@ function generate3MonthWeeks() {
     appState.selectedWeekIndex = weeks.findIndex(w => w.isCurrent) !== -1 ? weeks.findIndex(w => w.isCurrent) : 0;
 }
 
+window.expandMonth = function(monthName) {
+    appState.expandedMonth = monthName;
+    renderWeekNavigation();
+};
+
 function renderWeekNavigation() {
     const navContainer = document.getElementById('calendar-week-nav');
     if (!navContainer) return;
@@ -2619,29 +2624,47 @@ function renderWeekNavigation() {
         }
     });
 
-    let html = `<div style="display: flex; justify-content: space-between; gap: 15px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; user-select: none;">`;
+    // Varsayılan olarak seçili haftanın ayını açık tut
+    if (!appState.expandedMonth) {
+        const activeWeek = appState.calendarWeeks[appState.selectedWeekIndex];
+        appState.expandedMonth = activeWeek ? activeWeek.monthName : monthsMap[0].name;
+    }
+
+    let html = `<div style="display: flex; justify-content: flex-start; gap: 15px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; user-select: none; scrollbar-width: thin;">`;
     
     monthsMap.forEach(m => {
         const isMonthActive = m.weeks.some(w => w.index === appState.selectedWeekIndex);
+        const isExpanded = appState.expandedMonth === m.name;
+        
         const monthColor = isMonthActive ? '#F39C12' : '#1f5f99';
         const monthScale = isMonthActive ? 'scale(1.1)' : 'scale(1)';
+        const fontWeight = isExpanded ? '900' : 'bold';
+        const opacity = isExpanded ? '1' : '0.6';
         
-        html += `<div style="display: flex; flex: 1; flex-direction: column; align-items: center; min-width: 100px;">
-            <div style="font-weight: bold; color: ${monthColor}; margin-bottom: 8px; font-size: 0.95rem; transform: ${monthScale}; transition: 0.2s;">${m.name}</div>
-            <div style="display: flex; gap: 6px;">`;
+        html += `<div style="display: flex; flex-direction: column; align-items: center; min-width: max-content; cursor: pointer; opacity: ${opacity}; transition: 0.3s;" onclick="expandMonth('${m.name}')">
+            <div style="font-weight: ${fontWeight}; color: ${monthColor}; margin-bottom: 8px; font-size: 1rem; transform: ${monthScale}; transition: 0.2s;">
+                ${m.name} ${isExpanded ? '▾' : '▸'}
+            </div>`;
             
-        m.weeks.forEach(w => {
-            const isSelected = appState.selectedWeekIndex === w.index;
-            let bgColor = w.isPast ? '#e0e0e0' : (isSelected ? '#F39C12' : '#4facfe');
-            let cursor = w.isPast ? 'not-allowed' : 'pointer';
-            let opacity = w.isPast ? '0.5' : (isSelected ? '1' : '0.8');
-            let clickAttr = w.isPast ? '' : `onclick="selectCalendarWeek(${w.index})"`;
-            let transform = isSelected ? 'scale(1.15)' : 'scale(1)';
-            
-            html += `<div style="width: 35px; height: 8px; border-radius: 4px; background: ${bgColor}; cursor: ${cursor}; opacity: ${opacity}; transform: ${transform}; transition: 0.2s; margin: 4px 0;" ${clickAttr} title="${w.isPast ? 'Geçmiş Hafta' : 'Haftayı Seç'}"></div>`;
-        });
+        if (isExpanded) {
+            html += `<div style="display: flex; gap: 6px; animation: fadeIn 0.3s ease;">`;
+            m.weeks.forEach(w => {
+                const isSelected = appState.selectedWeekIndex === w.index;
+                let bgColor = w.isPast ? '#e0e0e0' : (isSelected ? '#F39C12' : '#4facfe');
+                let cursor = w.isPast ? 'not-allowed' : 'pointer';
+                let weekOpacity = w.isPast ? '0.5' : (isSelected ? '1' : '0.8');
+                let clickAttr = w.isPast ? '' : `onclick="event.stopPropagation(); selectCalendarWeek(${w.index})"`;
+                let transform = isSelected ? 'scale(1.15)' : 'scale(1)';
+                
+                html += `<div style="width: 35px; height: 8px; border-radius: 4px; background: ${bgColor}; cursor: ${cursor}; opacity: ${weekOpacity}; transform: ${transform}; transition: 0.2s; margin: 4px 0;" ${clickAttr} title="${w.isPast ? 'Geçmiş Hafta' : 'Haftayı Seç'}"></div>`;
+            });
+            html += `</div>`;
+        } else {
+            // Açık değilken sadece ince bir çizgi göster veya tamamen gizle
+            html += `<div style="width: 20px; height: 4px; border-radius: 2px; background: #ccc; margin: 6px 0;"></div>`;
+        }
         
-        html += `</div></div>`;
+        html += `</div>`;
     });
     
     html += `</div>`;
