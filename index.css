@@ -426,3 +426,328 @@ details.day-group .slots-grid {
   .user-controls:last-child { justify-content: center; flex-wrap: wrap; gap: 10px; }
   #header-back-icon, #header-home-icon { margin: 0; flex-shrink: 0; width: 28px; height: 28px; }
 }
+
+/* Profil Butonu Tasarımı */
+.user-profile-btn {
+    cursor: pointer;
+    font-weight: 600;
+    color: white;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 8px 18px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.user-profile-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* ==========================================================================
+   LIVE CLASS & CALENDAR UI
+   ========================================================================== */
+.live-dot {
+    width: 12px;
+    height: 12px;
+    background-color: #ff3b30;
+    border-radius: 50%;
+    display: inline-block;
+    animation: blink 1.5s infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes blink {
+    0% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+    50% { opacity: 0.5; transform: scale(1.1); box-shadow: 0 0 0 5px rgba(255, 59, 48, 0); }
+    100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+
+.student-calendar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.calendar-day {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.calendar-day.has-class {
+    border-color: #4facfe;
+    background: #eef7ff;
+}
+
+.calendar-day-title {
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.calendar-slot {
+    background: #fff;
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    position: relative;
+}
+
+.calendar-slot .live-dot {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    margin: 0;
+}
+
+.live-class-room {
+    width: 100%;
+    height: 400px;
+    background: #222;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+
+.live-class-room video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+}
+
+.live-class-controls {
+    position: absolute;
+    bottom: 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+}
+
+.live-class-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: background 0.3s;
+}
+
+.live-class-btn:hover {
+    background: rgba(255,255,255,0.4);
+}
+
+.live-class-btn.end-call {
+    background: #ff3b30;
+}
+
+/* ==========================================================================
+   SCREEN SHARE PIP & TOAST UI
+   ========================================================================== */
+.live-class-room #screen-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+}
+
+.live-class-room.screen-shared #local-video {
+    position: absolute;
+    bottom: 90px; /* Above controls */
+    right: 20px;
+    width: 200px;
+    height: 150px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.2);
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.toast-message {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #20C997;
+    color: #fff;
+    text-align: center;
+    border-radius: 8px;
+    padding: 16px;
+    position: fixed;
+    z-index: 3000;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    font-size: 1.1rem;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.toast-message.show {
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+    from {bottom: 0; opacity: 0;}
+    to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadeout {
+    from {bottom: 30px; opacity: 1;}
+    to {bottom: 0; opacity: 0;}
+}
+
+/* ==========================================================================
+   LIVE CLASS SIDEBAR & FULLSCREEN
+   ========================================================================== */
+.live-sidebar {
+    width: 0;
+    background: #1a1a1a;
+    transition: width 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #333;
+}
+
+.live-sidebar.open {
+    width: 300px;
+}
+
+.sidebar-tabs {
+    display: flex;
+    background: #222;
+    border-bottom: 1px solid #333;
+}
+
+.sidebar-tab {
+    flex: 1;
+    text-align: center;
+    padding: 15px 0;
+    cursor: pointer;
+    color: #888;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.sidebar-tab:hover {
+    color: white;
+}
+
+.sidebar-tab.active {
+    color: #20C997;
+    border-bottom: 2px solid #20C997;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    color: white;
+}
+
+.participant-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #333;
+    gap: 10px;
+}
+
+.participant-item .avatar {
+    width: 35px;
+    height: 35px;
+    background: #4facfe;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+}
+
+.chat-message {
+    background: #333;
+    padding: 10px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.chat-message .sender {
+    font-size: 0.8rem;
+    color: #20C997;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Tooltip for Screen Share */
+.tooltip-container .tooltip-text {
+    visibility: hidden;
+    width: 220px;
+    background-color: rgba(255, 59, 48, 0.9);
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    pointer-events: none;
+}
+
+.tooltip-container .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(255, 59, 48, 0.9) transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Fullscreen mode */
+:fullscreen #live-modal-content {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    border-radius: 0;
+}
+
+:fullscreen #live-flex-container {
+    height: calc(100vh - 60px) !important;
+}
