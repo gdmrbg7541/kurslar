@@ -1152,6 +1152,17 @@ async function openLiveClassRoom() {
                 // Linkle gelen kişi (Öğrenci)
                 appState.activeRoomId = urlRoomId;
                 document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğretmene Bağlanılıyor...</p>';
+                
+                // Ekran paylaşma ve link butonlarını gizle
+                const btnScreenContainer = document.getElementById('btn-screen').parentElement;
+                if (btnScreenContainer && btnScreenContainer.classList.contains('tooltip-container')) {
+                    btnScreenContainer.style.display = 'none';
+                } else {
+                    document.getElementById('btn-screen').style.display = 'none';
+                }
+                const btnInvite = document.getElementById('btn-invite');
+                if (btnInvite) btnInvite.style.display = 'none';
+
                 if (typeof initWebRTCRoom === 'function') {
                     await initWebRTCRoom(urlRoomId, false);
                 }
@@ -1240,13 +1251,16 @@ function toggleMute() {
         const audioTrack = appState.localStream.getAudioTracks()[0];
         if(audioTrack) {
             audioTrack.enabled = !audioTrack.enabled;
-            btn.innerText = audioTrack.enabled ? '🎤' : '🔇';
+            const svgOn = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+            const svgOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+            
+            btn.innerHTML = audioTrack.enabled ? svgOn : svgOff;
             btn.style.background = audioTrack.enabled ? 'rgba(255,255,255,0.2)' : '#ff3b30';
             
             if (appState.pipWindow) {
                 const pipBtn = appState.pipWindow.document.getElementById('pip-btn-mute');
                 if (pipBtn) {
-                    pipBtn.innerText = btn.innerText;
+                    pipBtn.innerHTML = btn.innerHTML;
                     pipBtn.style.background = btn.style.background;
                 }
             }
@@ -1263,7 +1277,10 @@ function toggleVideo() {
         const videoTrack = appState.localStream.getVideoTracks()[0];
         if(videoTrack) {
             videoTrack.enabled = !videoTrack.enabled;
-            btn.innerText = videoTrack.enabled ? '📷' : '🚫';
+            const svgOn = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
+            const svgOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path></svg>`;
+
+            btn.innerHTML = videoTrack.enabled ? svgOn : svgOff;
             btn.style.background = videoTrack.enabled ? 'rgba(255,255,255,0.2)' : '#ff3b30';
 
             if(localBox) {
@@ -1279,7 +1296,7 @@ function toggleVideo() {
             if (appState.pipWindow) {
                 const pipBtn = appState.pipWindow.document.getElementById('pip-btn-video');
                 if (pipBtn) {
-                    pipBtn.innerText = btn.innerText;
+                    pipBtn.innerHTML = btn.innerHTML;
                     pipBtn.style.background = btn.style.background;
                 }
             }
@@ -1437,7 +1454,7 @@ async function openPiPWindow() {
         const btnStopShare = document.createElement('button');
         btnStopShare.className = "live-class-btn";
         btnStopShare.style.background = "#ff3b30";
-        btnStopShare.innerHTML = "🖥️";
+        btnStopShare.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
         btnStopShare.title = "Paylaşımı Durdur";
         btnStopShare.onclick = () => {
             stopScreenShare();
@@ -1608,18 +1625,29 @@ function switchSidebarTab(tabName) {
 function sendChatMessage() {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();
-    if (!msg) return;
+    if (!msg || !appState.activeRoomId || typeof isFirebaseReady === 'undefined' || !isFirebaseReady) {
+        // Fallback or just append locally if not ready
+        if (msg) {
+            const chatContainer = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'chat-message';
+            msgDiv.innerHTML = `<div class="sender">Siz</div><div style="font-size: 0.9rem;">${msg}</div>`;
+            chatContainer.appendChild(msgDiv);
+            input.value = '';
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        return;
+    }
 
-    const chatContainer = document.getElementById('chat-messages');
-    
-    // Add msg
-    const msgDiv = document.createElement('div');
-    msgDiv.className = 'chat-message';
-    msgDiv.innerHTML = `<div class="sender">Siz</div><div style="font-size: 0.9rem;">${msg}</div>`;
-    chatContainer.appendChild(msgDiv);
-    
+    const senderName = appState.isInviteMode ? "Öğrenci/Misafir" : (appState.currentUserName && appState.currentUserName !== "Belirtilmedi" ? appState.currentUserName : "Öğretmen");
+
+    db.collection('rooms').doc(appState.activeRoomId).collection('messages').add({
+        text: msg,
+        sender: senderName,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
     input.value = '';
-    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function populateParticipants() {
@@ -1737,47 +1765,6 @@ function playJoinSound() {
         oscillator.stop(audioCtx.currentTime + 0.3);
     } catch(e) {
         console.log("AudioContext not supported or blocked");
-    }
-}
-
-function simulateParticipantJoin() {
-    // Ses çal
-    playJoinSound();
-
-    let otherName = appState.userRole === 'student' ? 'Eğitmen Geylani' : 'Öğrenci Ahmet';
-
-    // Toast göster
-    const toast = document.getElementById("toast-message");
-    if(toast) {
-        toast.innerText = `${otherName} derse katıldı!`;
-        toast.className = "toast-message show";
-        setTimeout(function(){ toast.className = toast.className.replace("show", ""); setTimeout(() => toast.innerText="Link Kopyalandı!", 500); }, 3000);
-    }
-
-    // Grid'e ekle (Simülasyon olarak yerel kameranın klonunu göster)
-    const grid = document.getElementById('main-video-grid');
-    if(grid) {
-        const box = document.createElement('div');
-        box.className = 'participant-box';
-        box.id = 'remote-participant-box';
-        box.innerHTML = `
-            <video id="mock-remote-video" autoplay muted playsinline style="transform: scaleX(-1); filter: hue-rotate(180deg) brightness(0.8) contrast(1.2);"></video>
-            <div class="camera-off-avatar" id="remote-avatar" style="display:none;">${otherName.charAt(0).toUpperCase()}</div>
-            <div class="participant-label">${otherName}</div>
-        `;
-        grid.appendChild(box);
-        // Klon videoyu başlat
-        const remoteVideo = document.getElementById('mock-remote-video');
-        if(appState.localStream && remoteVideo) {
-            remoteVideo.srcObject = appState.localStream;
-        }
-    }
-
-    // Sidebar listesini güncelle
-    const statusText = document.getElementById('dummy-participant-status');
-    if(statusText) {
-        statusText.innerText = 'Mikrofon Açık';
-        statusText.style.color = '#20C997';
     }
 }
 
@@ -5454,8 +5441,47 @@ async function initWebRTCRoom(roomId, isHost) {
         return;
     }
     
+    appState.isRoomHost = isHost;
     const roomRef = db.collection('rooms').doc(roomId);
     peerConnection = new RTCPeerConnection(configuration);
+
+    // Sohbet Dinleyicisi (Gerçek Zamanlı)
+    appState.unsubscribeChat = roomRef.collection('messages').orderBy('timestamp').onSnapshot(snapshot => {
+        const chatContainer = document.getElementById('chat-messages');
+        const myName = appState.isInviteMode ? "Öğrenci/Misafir" : (appState.currentUserName && appState.currentUserName !== "Belirtilmedi" ? appState.currentUserName : "Öğretmen");
+        
+        snapshot.docChanges().forEach(change => {
+            if (change.type === 'added') {
+                const data = change.doc.data();
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'chat-message';
+                const isSiz = data.sender === myName;
+                const displaySender = isSiz ? "Siz" : data.sender;
+                
+                // Avoid duplicating local fallback messages if any, simple approach: just render all from DB
+                msgDiv.innerHTML = `<div class="sender">${displaySender}</div><div style="font-size: 0.9rem;">${data.text}</div>`;
+                chatContainer.appendChild(msgDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        });
+    });
+
+    // Oda durumu ve Öğretmen/Yönetici kopması
+    appState.unsubscribeStatus = roomRef.onSnapshot(snapshot => {
+        const data = snapshot.data();
+        if (data && data.status === 'closed' && !appState.isRoomHost) {
+            // Eğer odayı kuran kişi çıkmışsa ve biz misafir/öğrenciysek
+            alert("Dersi başlatan kişi (Öğretmen/Yönetici) dersten ayrıldı. Ders sonlandırılıyor.");
+            closeLiveClassRoom();
+        }
+    });
+
+    // Tarayıcı kapatılınca tetiklenecek olay
+    window.addEventListener('beforeunload', () => {
+        if (appState.activeRoomId && appState.isRoomHost) {
+            db.collection('rooms').doc(appState.activeRoomId).update({ status: 'closed' });
+        }
+    });
 
     // Kameraları (local) ekle
     if (appState.localStream) {
@@ -5467,14 +5493,13 @@ async function initWebRTCRoom(roomId, isHost) {
     // Karşı tarafın görüntüsü geldiğinde ekranda göster
     peerConnection.ontrack = event => {
         const stream = event.streams[0];
-        const participantName = appState.isInviteMode ? "Öğretmen" : (appState.currentUserName !== "Belirtilmedi" ? appState.currentUserName : "Öğrenci");
+        const participantName = appState.isInviteMode ? "Öğretmen" : "Öğrenci";
         
         let container = document.getElementById('participants-video-container');
         if (container.innerHTML.includes('Bekleniyor')) {
             container.innerHTML = ''; // Temizle
         }
 
-        // Zaten eklenmiş mi kontrol et
         if (!document.getElementById('remote-video')) {
             container.innerHTML += `
                 <div class="participant-video">
@@ -5485,7 +5510,6 @@ async function initWebRTCRoom(roomId, isHost) {
         }
         document.getElementById('remote-video').srcObject = stream;
         
-        // Eğer PIP açıksa ona da yansıt
         if (appState.pipWindow) {
             const pipGrid = appState.pipWindow.document.getElementById('pip-participants-grid');
             if (pipGrid && !appState.pipWindow.document.getElementById('pip-remote-video')) {
@@ -5498,8 +5522,17 @@ async function initWebRTCRoom(roomId, isHost) {
         }
     };
 
+    // Bağlantı kopması durumu
+    peerConnection.onconnectionstatechange = () => {
+        if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+            const container = document.getElementById('participants-video-container');
+            if (container) {
+                container.innerHTML = `<div style="padding:20px; color:#aaa;">Karşı tarafın bağlantısı koptu...</div>`;
+            }
+        }
+    };
+
     if (isHost) {
-        // HOST (Öğretmen) Mantığı
         const callerCandidatesCollection = roomRef.collection('callerCandidates');
         
         peerConnection.onicecandidate = event => {
@@ -5513,11 +5546,11 @@ async function initWebRTCRoom(roomId, isHost) {
         
         const roomWithOffer = {
             offer: { type: offer.type, sdp: offer.sdp },
-            createdAt: new Date()
+            createdAt: new Date(),
+            status: 'active'
         };
         await roomRef.set(roomWithOffer);
 
-        // Öğrencinin cevabını (Answer) bekle
         appState.unsubscribeAnswer = roomRef.onSnapshot(async snapshot => {
             const data = snapshot.data();
             if (!peerConnection.currentRemoteDescription && data && data.answer) {
@@ -5526,7 +5559,6 @@ async function initWebRTCRoom(roomId, isHost) {
             }
         });
 
-        // Öğrencinin ICE adaylarını dinle
         appState.unsubscribeIce = roomRef.collection('calleeCandidates').onSnapshot(snapshot => {
             snapshot.docChanges().forEach(async change => {
                 if (change.type === 'added') {
@@ -5537,7 +5569,6 @@ async function initWebRTCRoom(roomId, isHost) {
         });
         
     } else {
-        // MİSAFİR (Öğrenci) Mantığı
         const calleeCandidatesCollection = roomRef.collection('calleeCandidates');
         
         peerConnection.onicecandidate = event => {
@@ -5547,7 +5578,7 @@ async function initWebRTCRoom(roomId, isHost) {
         };
 
         const roomSnapshot = await roomRef.get();
-        if (roomSnapshot.exists) {
+        if (roomSnapshot.exists && roomSnapshot.data().status !== 'closed') {
             const offer = roomSnapshot.data().offer;
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
             
@@ -5558,7 +5589,6 @@ async function initWebRTCRoom(roomId, isHost) {
                 answer: { type: answer.type, sdp: answer.sdp }
             });
 
-            // Öğretmenin ICE adaylarını dinle
             appState.unsubscribeIce = roomRef.collection('callerCandidates').onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(async change => {
                     if (change.type === 'added') {
@@ -5567,6 +5597,9 @@ async function initWebRTCRoom(roomId, isHost) {
                     }
                 });
             });
+        } else {
+            alert("Bu ders şu anda aktif değil veya sonlandırılmış.");
+            closeLiveClassRoom();
         }
     }
 }
