@@ -1079,7 +1079,7 @@ function openLiveClassRoom() {
                 document.getElementById('live-wait-msg').style.display = 'block';
                 setTimeout(() => {
                     const msg = document.getElementById('live-wait-msg');
-                    if(msg) msg.innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Derse Bağlanıldı</p>';
+                    if(msg) msg.style.display = 'none'; // msg.innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Derse Bağlanıldı</p>';
                 }, 3000);
             })
             .catch(err => {
@@ -1087,6 +1087,11 @@ function openLiveClassRoom() {
                 alert("Kamera veya mikrofona erişilemiyor. Simülasyon devam edecek.");
                 document.getElementById('live-wait-msg').innerHTML = '<p style="color: #ff3b30;">Kamera Yok</p>';
             });
+
+        // 8 saniye sonra birinin derse katıldığını simüle et
+        appState.simTimeout = setTimeout(() => {
+            simulateParticipantJoin();
+        }, 8000);
     }
 }
 
@@ -1126,6 +1131,11 @@ function closeLiveClassRoom() {
         if(sidebar) {
             sidebar.classList.remove('open');
         }
+        
+        // Clean up simulation
+        if(appState.simTimeout) clearTimeout(appState.simTimeout);
+        const grid = document.getElementById('participants-video-container');
+        if(grid) grid.innerHTML = '';
     }
 }
 
@@ -1292,14 +1302,66 @@ function populateParticipants() {
     // Dummy participant depending on role
     let otherName = appState.userRole === 'student' ? 'Eğitmen Geylani' : 'Öğrenci Ahmet';
     list.innerHTML += `
-        <li class="participant-item">
+        <li class="participant-item" id="dummy-participant-item">
             <div class="avatar" style="background:#f39c12;">${otherName.charAt(0).toUpperCase()}</div>
             <div>
                 <div style="font-weight:bold;">${otherName}</div>
-                <div style="font-size:0.8rem; color:#aaa;">Bağlanıyor...</div>
+                <div style="font-size:0.8rem; color:#aaa;" id="dummy-participant-status">Bekleniyor...</div>
             </div>
         </li>
     `;
+}
+
+function playJoinSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // A6
+        gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3);
+    } catch(e) {
+        console.log("AudioContext not supported or blocked");
+    }
+}
+
+function simulateParticipantJoin() {
+    // Ses çal
+    playJoinSound();
+
+    let otherName = appState.userRole === 'student' ? 'Eğitmen Geylani' : 'Öğrenci Ahmet';
+
+    // Toast göster
+    const toast = document.getElementById("toast-message");
+    if(toast) {
+        toast.innerText = `${otherName} derse katıldı!`;
+        toast.className = "toast-message show";
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); setTimeout(() => toast.innerText="Link Kopyalandı!", 500); }, 3000);
+    }
+
+    // Grid'e ekle
+    const grid = document.getElementById('participants-video-container');
+    if(grid) {
+        grid.innerHTML = `
+            <div class="remote-participant-video">
+                <div class="initials">${otherName.charAt(0).toUpperCase()}</div>
+                <div class="label">${otherName}</div>
+            </div>
+        `;
+    }
+
+    // Sidebar listesini güncelle
+    const statusText = document.getElementById('dummy-participant-status');
+    if(statusText) {
+        statusText.innerText = 'Mikrofon Açık';
+        statusText.style.color = '#20C997';
+    }
 }
 
 // Canlı Ders Kontrol ve Bildirim Sistemi (Interval)

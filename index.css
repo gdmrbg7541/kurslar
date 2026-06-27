@@ -571,8 +571,9 @@ details.day-group .slots-grid {
 .live-class-room #screen-video {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover; /* Ekrani tam kaplamasi istendi (tam ekran yarisini kullanmamasi icin) */
     background: #000;
+    flex-grow: 1;
 }
 
 .live-class-room.screen-shared #local-video {
@@ -750,4 +751,58 @@ details.day-group .slots-grid {
 
 :fullscreen #live-flex-container {
     height: calc(100vh - 60px) !important;
+}
+
+/* ==========================================================================
+   PARTICIPANT VIDEO GRID (REMOTE USERS)
+   ========================================================================== */
+.participants-video-grid {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 5;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 60%;
+    pointer-events: none; /* Let clicks pass through to main video if needed */
+}
+
+.remote-participant-video {
+    width: 180px;
+    height: 120px;
+    background: #222;
+    border-radius: 10px;
+    border: 2px solid rgba(255,255,255,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto; /* Re-enable clicks */
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.remote-participant-video .initials {
+    font-size: 3rem;
+    font-weight: bold;
+    color: rgba(255,255,255,0.8);
+}
+
+.remote-participant-video .label {
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+    background: rgba(0,0,0,0.7);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: white;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
