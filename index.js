@@ -1200,6 +1200,19 @@ async function openLiveClassRoom() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             appState.localStream = stream;
+            
+            // Eğer link ile gelmişse sesi ve görüntüyü baştan kapalı başlat
+            if (appState.isInviteMode) {
+                stream.getAudioTracks().forEach(track => track.enabled = false);
+                stream.getVideoTracks().forEach(track => track.enabled = false);
+                
+                // İkonları da güncelleyelim (Kırmızı ve üstü çizili yapalım)
+                const btnMic = document.getElementById('btn-mic');
+                const btnCam = document.getElementById('btn-cam');
+                if (btnMic) btnMic.innerHTML = '<i class="fas fa-microphone-slash" style="color: #ff3b30;"></i>';
+                if (btnCam) btnCam.innerHTML = '<i class="fas fa-video-slash" style="color: #ff3b30;"></i>';
+            }
+            
             const videoElement = document.getElementById('local-video');
             if(videoElement) {
                 videoElement.srcObject = stream;
