@@ -726,6 +726,42 @@ function prefillEmail() {
    4. BAŞLANGIÇ VE NAVİGASYON (ROUTING)
    ========================================== */
 function initApp() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const liveRoomId = urlParams.get('liveRoom');
+
+    if (liveRoomId) {
+        appState.isInviteMode = true;
+        
+        // Eğer giriş yapan kişi öğretmen veya admin ise, çıkış yaptır.
+        if (appState.userRole === 'admin' || appState.userRole === 'teacher') {
+            cikisYap(); 
+            return; // cikisYap -> initAppAsGuest -> initApp döngüsü ile geri gelecek
+        }
+
+        // Arayüzü tamamen gizle
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) appContainer.style.display = 'none';
+
+        // Tam ekran butonunu gizle (Zorla tam ekran yapacağız)
+        const fsBtn = document.getElementById('fullscreen-btn');
+        if (fsBtn) fsBtn.style.display = 'none';
+
+        // Odayı kapatma butonunu da kapatalım, yerine sadece alttaki "Ayrıl" tuşu çalışsın.
+        const closeBtns = document.querySelectorAll('#live-modal-content .modal-close, #live-modal-content [title="Kapat"]');
+        closeBtns.forEach(btn => btn.style.display = 'none');
+
+        // Canlı dersi başlat
+        openLiveClassRoom();
+        
+        // Tam ekran moduna zorla
+        const modalContent = document.getElementById('live-modal-content');
+        if (modalContent && !modalContent.classList.contains('maximized')) {
+            modalContent.classList.add('maximized');
+        }
+
+        return; // Sitenin kalanını render etme
+    }
+
     if (appState.userRole === 'admin') {
         changeView('admin-section');
         renderAdminPanel();
@@ -1137,6 +1173,16 @@ function closeLiveClassRoom() {
         if(appState.simTimeout) clearTimeout(appState.simTimeout);
         const grid = document.getElementById('participants-video-container');
         if(grid) grid.innerHTML = '';
+        
+        // Eğer link ile gelinmişse, geri kalan siteye erişimi engelle
+        if (appState.isInviteMode) {
+            document.body.innerHTML = `
+                <div style="display: flex; height: 100vh; width: 100vw; background: #111; color: white; align-items: center; justify-content: center; flex-direction: column; font-family: 'Inter', sans-serif;">
+                    <h1 style="color: #20C997;">Dersten Ayrıldınız</h1>
+                    <p style="color: #aaa; margin-top: 10px;">Görüşmek üzere. Bu pencereyi veya sekmeyi kapatabilirsiniz.</p>
+                </div>
+            `;
+        }
     }
 }
 
@@ -1201,8 +1247,8 @@ async function openPiPWindow() {
 
     try {
         const pipWindow = await window.documentPictureInPicture.requestWindow({
-            width: 320,
-            height: 100
+            width: 350,
+            height: 220
         });
 
         appState.pipWindow = pipWindow;
@@ -1233,10 +1279,85 @@ async function openPiPWindow() {
         // Build PiP HTML
         pipWindow.document.body.style.margin = "0";
         pipWindow.document.body.style.display = "flex";
+        pipWindow.document.body.style.flexDirection = "column";
         pipWindow.document.body.style.alignItems = "center";
         pipWindow.document.body.style.justifyContent = "center";
         pipWindow.document.body.style.background = "#1a1a1a";
         pipWindow.document.body.style.fontFamily = "'Inter', sans-serif";
+        pipWindow.document.body.style.padding = "10px";
+
+        // Video Grid
+        const pipVideoGrid = document.createElement('div');
+        pipVideoGrid.style.display = "flex";
+        pipVideoGrid.style.gap = "10px";
+        pipVideoGrid.style.width = "100%";
+        pipVideoGrid.style.justifyContent = "center";
+        pipVideoGrid.style.alignItems = "center";
+        pipVideoGrid.style.marginBottom = "15px";
+
+        if (appState.localStream) {
+            // Local Video
+            const localVidBox = document.createElement('div');
+            localVidBox.className = "participant-box";
+            localVidBox.style.width = "140px";
+            localVidBox.style.height = "100px";
+            localVidBox.style.position = "relative";
+            localVidBox.style.borderRadius = "8px";
+            localVidBox.style.overflow = "hidden";
+            
+            const localVid = document.createElement('video');
+            localVid.autoplay = true;
+            localVid.muted = true;
+            localVid.playsInline = true;
+            localVid.srcObject = appState.localStream;
+            localVid.style.width = "100%";
+            localVid.style.height = "100%";
+            localVid.style.objectFit = "cover";
+            localVidBox.appendChild(localVid);
+            
+            const localLabel = document.createElement('div');
+            localLabel.className = "participant-label";
+            localLabel.innerText = "Siz";
+            localLabel.style.fontSize = "0.7rem";
+            localLabel.style.bottom = "5px";
+            localLabel.style.left = "5px";
+            localVidBox.appendChild(localLabel);
+            
+            pipVideoGrid.appendChild(localVidBox);
+            
+            // Remote Video (Simulation)
+            const remoteVidBox = document.createElement('div');
+            remoteVidBox.className = "participant-box";
+            remoteVidBox.style.width = "140px";
+            remoteVidBox.style.height = "100px";
+            remoteVidBox.style.position = "relative";
+            remoteVidBox.style.borderRadius = "8px";
+            remoteVidBox.style.overflow = "hidden";
+
+            const remoteVid = document.createElement('video');
+            remoteVid.autoplay = true;
+            remoteVid.muted = true;
+            remoteVid.playsInline = true;
+            remoteVid.srcObject = appState.localStream; // Simulate remote
+            remoteVid.style.width = "100%";
+            remoteVid.style.height = "100%";
+            remoteVid.style.objectFit = "cover";
+            remoteVid.style.transform = "scaleX(-1)";
+            remoteVid.style.filter = "hue-rotate(180deg) brightness(0.8) contrast(1.2)";
+            remoteVidBox.appendChild(remoteVid);
+            
+            const remoteLabel = document.createElement('div');
+            remoteLabel.className = "participant-label";
+            remoteLabel.innerText = "Öğrenci";
+            remoteLabel.style.fontSize = "0.7rem";
+            remoteLabel.style.bottom = "5px";
+            remoteLabel.style.left = "5px";
+            remoteVidBox.appendChild(remoteLabel);
+            
+            pipVideoGrid.appendChild(remoteVidBox);
+        }
+
+        pipWindow.document.body.appendChild(pipVideoGrid);
 
         const container = document.createElement('div');
         container.style.display = "flex";
@@ -1296,6 +1417,13 @@ async function toggleScreenShare() {
     const btnScreen = document.getElementById('btn-screen');
 
     if (!appState.screenStream) {
+        // Tarayıcının "Kullanıcı Etkileşimi" jetonunu kaybetmemek için PiP'yi hemen açıyoruz
+        let pipOpened = false;
+        if ('documentPictureInPicture' in window && !appState.pipWindow) {
+            openPiPWindow(); // async, starts immediately
+            pipOpened = true;
+        }
+
         try {
             let stream;
             try {
@@ -1319,15 +1447,17 @@ async function toggleScreenShare() {
             
             btnScreen.style.background = '#ff3b30';
 
-            // Yüzen kontrol panelini aç
-            openPiPWindow();
-
             // Ekran paylaşımı tarayıcıdan (alttaki bar üzerinden) durdurulursa yakalayalım
             stream.getVideoTracks()[0].onended = () => {
                 stopScreenShare();
             };
         } catch (err) {
             console.error("Ekran paylaşımı reddedildi veya hata oluştu", err);
+            // Kullanıcı pencere seçmekten vazgeçerse açtığımız PiP'i geri kapatalım
+            if (appState.pipWindow) {
+                appState.pipWindow.close();
+                appState.pipWindow = null;
+            }
         }
     } else {
         stopScreenShare();
