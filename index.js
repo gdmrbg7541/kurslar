@@ -229,15 +229,19 @@ if (typeof firebase !== 'undefined' && isFirebaseReady) {
                 if (selectedRole === 'student') {
                     appState.purchasedPackages = data.purchasedPackages || [];
                     if (!appState.studentProgress["self"]) appState.studentProgress["self"] = {};
-                    appState.studentProgress["self"][user.email] = data.progress || {};
+                    // Anonymous users have user.email = null, so skip progress tracking
+                    if (user.email) appState.studentProgress["self"][user.email] = data.progress || {};
                 }
 
-                const finalName = data.name && data.name !== "Belirtilmedi" ? data.name : (user.displayName || "Öğrenci");
-                basariliGiris(user.email, data.phone, finalName);
+                const fallbackName = user.isAnonymous && appState.currentUserName && appState.currentUserName !== "Misafir Öğrenci" ? appState.currentUserName : (user.displayName || "Öğrenci");
+                const finalName = data.name && data.name !== "Belirtilmedi" ? data.name : fallbackName;
+                
+                basariliGiris(user.email || "anonim", data.phone, finalName);
 
             }).catch(err => {
                 console.error("Firestore okuma hatası:", err);
-                basariliGiris(user.email, "", user.displayName || "Öğrenci");
+                const fallbackName = user.isAnonymous && appState.currentUserName && appState.currentUserName !== "Misafir Öğrenci" ? appState.currentUserName : (user.displayName || "Öğrenci");
+                basariliGiris(user.email || "anonim", "", fallbackName);
             });
         } else {
             // Firebase girişi yoksa, admin bypass yapılmış olabilir mi kontrol et
@@ -790,7 +794,8 @@ function initApp() {
         closeBtns.forEach(btn => btn.style.display = 'none');
 
         // Misafir ise isim sor VEYA Google ile giriş iste
-        if (appState.userRole === 'student' && appState.currentUser === "Misafir Öğrenci") {
+        const isAnonymous = typeof firebase !== 'undefined' && firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous;
+        if (appState.userRole === 'student' && (appState.currentUser === "Misafir Öğrenci" || (isAnonymous && (!appState.currentUserName || appState.currentUserName === "Öğrenci")))) {
             const promptHTML = `
                 <div id="guest-name-prompt" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #111; z-index: 3000; display: flex; align-items: center; justify-content: center; flex-direction: column; font-family: 'Inter', sans-serif;">
                     <div class="glass-card" style="padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
@@ -1207,10 +1212,26 @@ async function openLiveClassRoom() {
                 stream.getVideoTracks().forEach(track => track.enabled = false);
                 
                 // İkonları da güncelleyelim (Kırmızı ve üstü çizili yapalım)
-                const btnMic = document.getElementById('btn-mic');
-                const btnCam = document.getElementById('btn-cam');
-                if (btnMic) btnMic.innerHTML = '<i class="fas fa-microphone-slash" style="color: #ff3b30;"></i>';
-                if (btnCam) btnCam.innerHTML = '<i class="fas fa-video-slash" style="color: #ff3b30;"></i>';
+                const btnMute = document.getElementById('btn-mute');
+                const btnVideo = document.getElementById('btn-video');
+                
+                const svgMicOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
+                const svgVidOff = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34m-7.72-2.06a4 4 0 1 1-5.56-5.56"></path></svg>`;
+                
+                if (btnMute) {
+                    btnMute.innerHTML = svgMicOff;
+                    btnMute.style.background = '#ff3b30';
+                }
+                if (btnVideo) {
+                    btnVideo.innerHTML = svgVidOff;
+                    btnVideo.style.background = '#ff3b30';
+                }
+                
+                // Avatar göster, kamerayı gizle
+                const localBox = document.getElementById('local-box');
+                const localAvatar = document.getElementById('local-avatar');
+                if (localBox) localBox.classList.add('camera-off');
+                if (localAvatar) localAvatar.style.display = 'flex';
             }
             
             const videoElement = document.getElementById('local-video');
