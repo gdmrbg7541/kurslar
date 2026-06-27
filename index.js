@@ -764,7 +764,7 @@ function initApp() {
             `;
             document.body.insertAdjacentHTML('beforeend', promptHTML);
             
-            window.joinAsGuest = function() {
+            window.joinAsGuest = async function() {
                 const name = document.getElementById('guest-name-input').value.trim();
                 if (!name) {
                     alert("Lütfen adınızı girin.");
@@ -772,6 +772,14 @@ function initApp() {
                 }
                 appState.currentUserName = name;
                 document.getElementById('guest-name-prompt').remove();
+                
+                try {
+                    if (firebase.auth().currentUser === null) {
+                        await firebase.auth().signInAnonymously();
+                    }
+                } catch(e) {
+                    console.warn("Anonim giriş yapılamadı, devam ediliyor...", e);
+                }
                 
                 openLiveClassRoom();
                 const modalContent = document.getElementById('live-modal-content');
@@ -5429,7 +5437,10 @@ let peerConnection = null;
 const configuration = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' }
     ]
 };
 
