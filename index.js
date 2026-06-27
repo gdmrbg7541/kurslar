@@ -750,13 +750,42 @@ function initApp() {
         const closeBtns = document.querySelectorAll('#live-modal-content .modal-close, #live-modal-content [title="Kapat"]');
         closeBtns.forEach(btn => btn.style.display = 'none');
 
-        // Canlı dersi başlat
-        openLiveClassRoom();
-        
-        // Tam ekran moduna zorla
-        const modalContent = document.getElementById('live-modal-content');
-        if (modalContent && !modalContent.classList.contains('maximized')) {
-            modalContent.classList.add('maximized');
+        // Misafir ise isim sor, öğrenci ise kendi adıyla devam et
+        if (appState.userRole === 'student' && appState.currentUser === "Misafir Öğrenci") {
+            const promptHTML = `
+                <div id="guest-name-prompt" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; background: #111; z-index: 3000; display: flex; align-items: center; justify-content: center; flex-direction: column; font-family: 'Inter', sans-serif;">
+                    <div class="glass-card" style="padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                        <h2 style="color: white; margin-bottom: 20px;">Derse Katıl</h2>
+                        <p style="color: #aaa; margin-bottom: 20px;">Lütfen derse katılmak için adınızı girin.</p>
+                        <input type="text" id="guest-name-input" placeholder="Adınız Soyadınız" style="width: 100%; padding: 15px; border-radius: 8px; border: none; margin-bottom: 20px; font-size: 1.1rem; background: rgba(255,255,255,0.9); color: #333; outline: none; box-sizing: border-box;">
+                        <button onclick="joinAsGuest()" style="width: 100%; padding: 15px; font-size: 1.1rem; background: #20C997; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Derse Katıl</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', promptHTML);
+            
+            window.joinAsGuest = function() {
+                const name = document.getElementById('guest-name-input').value.trim();
+                if (!name) {
+                    alert("Lütfen adınızı girin.");
+                    return;
+                }
+                appState.currentUserName = name;
+                document.getElementById('guest-name-prompt').remove();
+                
+                openLiveClassRoom();
+                const modalContent = document.getElementById('live-modal-content');
+                if (modalContent && !modalContent.classList.contains('maximized')) {
+                    modalContent.classList.add('maximized');
+                }
+            };
+        } else {
+            // Zaten kayıtlı öğrenci ise doğrudan gir
+            openLiveClassRoom();
+            const modalContent = document.getElementById('live-modal-content');
+            if (modalContent && !modalContent.classList.contains('maximized')) {
+                modalContent.classList.add('maximized');
+            }
         }
 
         return; // Sitenin kalanını render etme
@@ -1100,35 +1129,54 @@ function renderStudentCalendar() {
 }
 
 // Canlı Ders Odası Fonksiyonları
-function openLiveClassRoom() {
+async function openLiveClassRoom() {
     const modal = document.getElementById('live-class-modal');
     if(modal) {
         modal.style.display = 'flex';
-        populateParticipants();
-        // Simülasyon için fake kamera
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                appState.localStream = stream;
-                const videoElement = document.getElementById('local-video');
-                if(videoElement) {
-                    videoElement.srcObject = stream;
+        
+        // Setup local camera first
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            appState.localStream = stream;
+            const videoElement = document.getElementById('local-video');
+            if(videoElement) {
+                videoElement.srcObject = stream;
+            }
+            document.getElementById('live-wait-msg').style.display = 'block';
+            
+            // WebRTC Başlat
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlRoomId = urlParams.get('liveRoom');
+            
+            if (urlRoomId) {
+                // Linkle gelen kişi (Öğrenci)
+                appState.activeRoomId = urlRoomId;
+                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğretmene Bağlanılıyor...</p>';
+                if (typeof initWebRTCRoom === 'function') {
+                    await initWebRTCRoom(urlRoomId, false);
                 }
-                document.getElementById('live-wait-msg').style.display = 'block';
-                setTimeout(() => {
-                    const msg = document.getElementById('live-wait-msg');
-                    if(msg) msg.style.display = 'none'; // msg.innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Derse Bağlanıldı</p>';
-                }, 3000);
-            })
-            .catch(err => {
-                console.error("Kamera izni reddedildi veya hata oluştu", err);
-                alert("Kamera veya mikrofona erişilemiyor. Simülasyon devam edecek.");
-                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #ff3b30;">Kamera Yok</p>';
-            });
+            } else {
+                // Öğretmen odayı kendi başlatıyor
+                appState.activeRoomId = Math.random().toString(36).substring(2, 10);
+                document.getElementById('live-wait-msg').innerHTML = '<p style="color: #20C997; font-size: 1.2rem; font-weight: bold;">Öğrenci Bekleniyor...</p>';
+                if (typeof initWebRTCRoom === 'function') {
+                    await initWebRTCRoom(appState.activeRoomId, true);
+                }
+            }
+            
+            // Eğer 3 saniye içinde karşıdan görüntü gelmezse mesajı gizle (opsiyonel)
+            setTimeout(() => {
+                const msg = document.getElementById('live-wait-msg');
+                if(msg && msg.style.display !== 'none' && !appState.remoteStream) {
+                    // msg.style.display = 'none'; // Artık bunu siliyoruz, çünkü gerçekten gelene kadar bekleyeceğiz.
+                }
+            }, 3000);
 
-        // 8 saniye sonra birinin derse katıldığını simüle et
-        appState.simTimeout = setTimeout(() => {
-            simulateParticipantJoin();
-        }, 8000);
+        } catch (err) {
+            console.error("Kamera izni reddedildi veya hata oluştu", err);
+            alert("Kamera veya mikrofona erişilemiyor. Lütfen tarayıcı izinlerini kontrol edin.");
+            document.getElementById('live-wait-msg').innerHTML = '<p style="color: #ff3b30;">Kamera Yok</p>';
+        }
     }
 }
 
@@ -1440,14 +1488,22 @@ async function toggleScreenShare() {
             }
             appState.screenStream = stream;
             
-            // Ekran videosunu göster ve PIP moduna geç
+            // Ekran videolarını yerel olarak göster
             screenVideo.srcObject = stream;
             screenVideo.style.display = 'block';
             roomContainer.classList.add('screen-shared');
             
             btnScreen.style.background = '#ff3b30';
 
-            // Ekran paylaşımı tarayıcıdan (alttaki bar üzerinden) durdurulursa yakalayalım
+            // WebRTC ile karşı tarafa gönder
+            if (typeof peerConnection !== 'undefined' && peerConnection && peerConnection.getSenders) {
+                const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                if (sender) {
+                    sender.replaceTrack(stream.getVideoTracks()[0]);
+                }
+            }
+
+            // Ekran paylaşımı tarayıcıdan durdurulursa yakalayalım
             stream.getVideoTracks()[0].onended = () => {
                 stopScreenShare();
             };
@@ -1479,6 +1535,14 @@ function stopScreenShare() {
     roomContainer.classList.remove('screen-shared');
     btnScreen.style.background = 'rgba(32,201,151,0.8)';
 
+    // WebRTC ekran paylaşımı iptali, kameraya dön
+    if (typeof peerConnection !== 'undefined' && peerConnection && peerConnection.getSenders && appState.localStream) {
+        const sender = peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+        if (sender) {
+            sender.replaceTrack(appState.localStream.getVideoTracks()[0]);
+        }
+    }
+
     if (appState.pipWindow) {
         appState.pipWindow.close();
         appState.pipWindow = null;
@@ -1486,8 +1550,11 @@ function stopScreenShare() {
 }
 
 function generateInviteLink() {
-    const roomId = Math.random().toString(36).substring(2, 10);
-    const inviteLink = window.location.origin + window.location.pathname + "?liveRoom=" + roomId;
+    if (!appState.activeRoomId) {
+        alert("Lütfen önce canlı dersi başlatın (veya sisteme bağlanmasını bekleyin).");
+        return;
+    }
+    const inviteLink = window.location.origin + window.location.pathname + "?liveRoom=" + appState.activeRoomId;
     
     navigator.clipboard.writeText(inviteLink).then(() => {
         const toast = document.getElementById("toast-message");
@@ -5370,12 +5437,137 @@ window.previewPackage = function(pkgId, pkgName) {
     renderPreviewStep(1);
 };
 
-// URL parametresinde liveRoom varsa otomatik canlı derse katıl
-(function checkUrlForInvite() {
-    setTimeout(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('liveRoom')) {
-            openLiveClassRoom();
+/* ==========================================
+   WEBRTC GERÇEK ZAMANLI VİDEO BAĞLANTISI
+   ========================================== */
+let peerConnection = null;
+const configuration = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+};
+
+async function initWebRTCRoom(roomId, isHost) {
+    if (!isFirebaseReady) {
+        console.warn("Firebase hazır değil, WebRTC kullanılamıyor.");
+        return;
+    }
+    
+    const roomRef = db.collection('rooms').doc(roomId);
+    peerConnection = new RTCPeerConnection(configuration);
+
+    // Kameraları (local) ekle
+    if (appState.localStream) {
+        appState.localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, appState.localStream);
+        });
+    }
+
+    // Karşı tarafın görüntüsü geldiğinde ekranda göster
+    peerConnection.ontrack = event => {
+        const stream = event.streams[0];
+        const participantName = appState.isInviteMode ? "Öğretmen" : (appState.currentUserName !== "Belirtilmedi" ? appState.currentUserName : "Öğrenci");
+        
+        let container = document.getElementById('participants-video-container');
+        if (container.innerHTML.includes('Bekleniyor')) {
+            container.innerHTML = ''; // Temizle
         }
-    }, 500); // UI yüklendikten sonra kontrol et
-})();
+
+        // Zaten eklenmiş mi kontrol et
+        if (!document.getElementById('remote-video')) {
+            container.innerHTML += `
+                <div class="participant-video">
+                    <video id="remote-video" autoplay playsinline></video>
+                    <div class="participant-name">${participantName}</div>
+                </div>
+            `;
+        }
+        document.getElementById('remote-video').srcObject = stream;
+        
+        // Eğer PIP açıksa ona da yansıt
+        if (appState.pipWindow) {
+            const pipGrid = appState.pipWindow.document.getElementById('pip-participants-grid');
+            if (pipGrid && !appState.pipWindow.document.getElementById('pip-remote-video')) {
+                const div = appState.pipWindow.document.createElement('div');
+                div.className = 'pip-participant-video';
+                div.innerHTML = `<video id="pip-remote-video" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>`;
+                pipGrid.appendChild(div);
+                appState.pipWindow.document.getElementById('pip-remote-video').srcObject = stream;
+            }
+        }
+    };
+
+    if (isHost) {
+        // HOST (Öğretmen) Mantığı
+        const callerCandidatesCollection = roomRef.collection('callerCandidates');
+        
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                callerCandidatesCollection.add(event.candidate.toJSON());
+            }
+        };
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        
+        const roomWithOffer = {
+            offer: { type: offer.type, sdp: offer.sdp },
+            createdAt: new Date()
+        };
+        await roomRef.set(roomWithOffer);
+
+        // Öğrencinin cevabını (Answer) bekle
+        appState.unsubscribeAnswer = roomRef.onSnapshot(async snapshot => {
+            const data = snapshot.data();
+            if (!peerConnection.currentRemoteDescription && data && data.answer) {
+                const rtcSessionDescription = new RTCSessionDescription(data.answer);
+                await peerConnection.setRemoteDescription(rtcSessionDescription);
+            }
+        });
+
+        // Öğrencinin ICE adaylarını dinle
+        appState.unsubscribeIce = roomRef.collection('calleeCandidates').onSnapshot(snapshot => {
+            snapshot.docChanges().forEach(async change => {
+                if (change.type === 'added') {
+                    const data = change.doc.data();
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+                }
+            });
+        });
+        
+    } else {
+        // MİSAFİR (Öğrenci) Mantığı
+        const calleeCandidatesCollection = roomRef.collection('calleeCandidates');
+        
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                calleeCandidatesCollection.add(event.candidate.toJSON());
+            }
+        };
+
+        const roomSnapshot = await roomRef.get();
+        if (roomSnapshot.exists) {
+            const offer = roomSnapshot.data().offer;
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            
+            await roomRef.update({
+                answer: { type: answer.type, sdp: answer.sdp }
+            });
+
+            // Öğretmenin ICE adaylarını dinle
+            appState.unsubscribeIce = roomRef.collection('callerCandidates').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(async change => {
+                    if (change.type === 'added') {
+                        const data = change.doc.data();
+                        await peerConnection.addIceCandidate(new RTCIceCandidate(data));
+                    }
+                });
+            });
+        }
+    }
+}
+

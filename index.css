@@ -108,8 +108,8 @@ header svg { stroke: white; }
    MAXIMIZED MODE (Browser tab fullscreen instead of OS fullscreen)
    ========================================================================== */
 #live-modal-content.maximized {
-    height: 100vh !important;
-    max-height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     max-width: 100vw !important;
     width: 100vw !important;
     margin: 0 !important;
@@ -118,7 +118,7 @@ header svg { stroke: white; }
 }
 
 #live-modal-content.maximized #live-flex-container {
-    height: calc(100vh - 60px) !important;
+    height: calc(100dvh - 60px) !important;
 }
 
 /* ==========================================================================
@@ -927,11 +927,11 @@ details.day-group .slots-grid {
     /* Maximized fixes for mobile */
     #live-modal-content.maximized {
         width: 100vw !important;
-        height: 100vh !important;
+        height: 100dvh !important;
     }
     
     #live-modal-content.maximized #live-flex-container {
-        height: calc(100vh - 50px) !important; /* Smaller header */
+        height: calc(100dvh - 50px) !important; /* Smaller header */
     }
     
     #live-modal-content.maximized #screen-video {
