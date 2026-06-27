@@ -142,11 +142,17 @@
             
             <div style="display: flex; width: 100%; height: 60vh; min-height: 400px;" id="live-flex-container">
                 <!-- Sol Video Alanı -->
-                <div class="live-class-room" id="live-class-room-container" style="flex: 1; position: relative; display: flex; flex-direction: column;">
+                <div class="live-class-room" id="live-class-room-container" style="flex: 1; position: relative;">
                     <video id="screen-video" autoplay muted playsinline style="display:none;"></video>
-                    <video id="local-video" autoplay muted playsinline></video>
-                    <!-- Katılımcıların görüneceği grid -->
-                    <div id="participants-video-container" class="participants-video-grid"></div>
+                    
+                    <!-- Unified Grid for participants -->
+                    <div id="main-video-grid" class="main-video-grid">
+                        <div class="participant-box" id="local-box">
+                            <video id="local-video" autoplay muted playsinline></video>
+                            <div class="camera-off-avatar" id="local-avatar" style="display:none;">S</div>
+                            <div class="participant-label">Siz</div>
+                        </div>
+                    </div>
                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 1;" id="live-wait-msg">
                         <p style="font-size: 1.2rem; margin-bottom: 10px;">Kamera Başlatılıyor...</p>
                         <p style="color: #aaa; font-size: 0.9rem;">Karşı taraf bekleniyor.</p>
@@ -161,7 +167,6 @@
                         <button class="live-class-btn" onclick="generateInviteLink()" id="btn-invite" title="Davet Linki Kopyala" style="background: rgba(79,172,254,0.8);">🔗</button>
                         <button class="live-class-btn" onclick="toggleSidebar('participants')" title="Katılımcılar" style="background: rgba(255,255,255,0.2);">👥</button>
                         <button class="live-class-btn" onclick="toggleSidebar('chat')" title="Sohbet" style="background: rgba(255,255,255,0.2);">💬</button>
-                        <button class="live-class-btn end-call" onclick="closeLiveClassRoom()" title="Aramayı Sonlandır">❌</button>
                     </div>
                 </div>
 

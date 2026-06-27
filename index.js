@@ -31,6 +31,7 @@ let appState = {
     selectedOnlinePackages: [],
     selectedOfflinePackages: [],
     selectedSlots: [],
+    pipWindow: null,
     
     // Yeni Eklenenler (Randevu Takibi ve Öğretmen Araçları)
     pendingLessons: [],
@@ -1147,19 +1148,145 @@ function toggleMute() {
             audioTrack.enabled = !audioTrack.enabled;
             btn.innerText = audioTrack.enabled ? '🎤' : '🔇';
             btn.style.background = audioTrack.enabled ? 'rgba(255,255,255,0.2)' : '#ff3b30';
+            
+            if (appState.pipWindow) {
+                const pipBtn = appState.pipWindow.document.getElementById('pip-btn-mute');
+                if (pipBtn) {
+                    pipBtn.innerText = btn.innerText;
+                    pipBtn.style.background = btn.style.background;
+                }
+            }
         }
     }
 }
 
 function toggleVideo() {
     const btn = document.getElementById('btn-video');
+    const localBox = document.getElementById('local-box');
+    const localAvatar = document.getElementById('local-avatar');
+
     if(appState.localStream) {
         const videoTrack = appState.localStream.getVideoTracks()[0];
         if(videoTrack) {
             videoTrack.enabled = !videoTrack.enabled;
             btn.innerText = videoTrack.enabled ? '📷' : '🚫';
             btn.style.background = videoTrack.enabled ? 'rgba(255,255,255,0.2)' : '#ff3b30';
+
+            if(localBox) {
+                if(videoTrack.enabled) {
+                    localBox.classList.remove('camera-off');
+                    if(localAvatar) localAvatar.style.display = 'none';
+                } else {
+                    localBox.classList.add('camera-off');
+                    if(localAvatar) localAvatar.style.display = 'flex';
+                }
+            }
+
+            if (appState.pipWindow) {
+                const pipBtn = appState.pipWindow.document.getElementById('pip-btn-video');
+                if (pipBtn) {
+                    pipBtn.innerText = btn.innerText;
+                    pipBtn.style.background = btn.style.background;
+                }
+            }
         }
+    }
+}
+
+async function openPiPWindow() {
+    if (!('documentPictureInPicture' in window)) {
+        console.warn('Document Picture-in-Picture API is not supported in this browser.');
+        return;
+    }
+
+    try {
+        const pipWindow = await window.documentPictureInPicture.requestWindow({
+            width: 320,
+            height: 100
+        });
+
+        appState.pipWindow = pipWindow;
+
+        // Copy styles to the PiP window (essential for rendering buttons nicely)
+        [...document.styleSheets].forEach((styleSheet) => {
+            try {
+                const cssRules = [...styleSheet.cssRules].map((rule) => rule.cssText).join('');
+                const style = document.createElement('style');
+                style.textContent = cssRules;
+                pipWindow.document.head.appendChild(style);
+            } catch (e) {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = styleSheet.type;
+                link.media = styleSheet.media;
+                link.href = styleSheet.href;
+                pipWindow.document.head.appendChild(link);
+            }
+        });
+
+        // Add Google Fonts
+        const linkFonts = document.createElement('link');
+        linkFonts.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Marhey:wght@400;600;700&display=swap";
+        linkFonts.rel = "stylesheet";
+        pipWindow.document.head.appendChild(linkFonts);
+
+        // Build PiP HTML
+        pipWindow.document.body.style.margin = "0";
+        pipWindow.document.body.style.display = "flex";
+        pipWindow.document.body.style.alignItems = "center";
+        pipWindow.document.body.style.justifyContent = "center";
+        pipWindow.document.body.style.background = "#1a1a1a";
+        pipWindow.document.body.style.fontFamily = "'Inter', sans-serif";
+
+        const container = document.createElement('div');
+        container.style.display = "flex";
+        container.style.gap = "15px";
+        
+        // Mute button
+        const btnMute = document.createElement('button');
+        btnMute.id = "pip-btn-mute";
+        btnMute.className = "live-class-btn";
+        btnMute.style.position = "relative";
+        btnMute.innerHTML = document.getElementById('btn-mute').innerHTML;
+        btnMute.style.background = document.getElementById('btn-mute').style.background || "rgba(255,255,255,0.2)";
+        btnMute.onclick = () => {
+            toggleMute(); // calls main window function
+        };
+
+        // Video button
+        const btnVideo = document.createElement('button');
+        btnVideo.id = "pip-btn-video";
+        btnVideo.className = "live-class-btn";
+        btnVideo.style.position = "relative";
+        btnVideo.innerHTML = document.getElementById('btn-video').innerHTML;
+        btnVideo.style.background = document.getElementById('btn-video').style.background || "rgba(255,255,255,0.2)";
+        btnVideo.onclick = () => {
+            toggleVideo(); // calls main window function
+        };
+
+        // Stop Share button
+        const btnStopShare = document.createElement('button');
+        btnStopShare.className = "live-class-btn";
+        btnStopShare.style.background = "#ff3b30";
+        btnStopShare.innerHTML = "🖥️";
+        btnStopShare.title = "Paylaşımı Durdur";
+        btnStopShare.onclick = () => {
+            stopScreenShare();
+        };
+
+        container.appendChild(btnMute);
+        container.appendChild(btnVideo);
+        container.appendChild(btnStopShare);
+
+        pipWindow.document.body.appendChild(container);
+
+        // Handle PiP close event
+        pipWindow.addEventListener("pagehide", (event) => {
+            appState.pipWindow = null;
+        });
+
+    } catch (e) {
+        console.error('Failed to open PiP window:', e);
     }
 }
 
@@ -1170,12 +1297,30 @@ async function toggleScreenShare() {
 
     if (!appState.screenStream) {
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+            let stream;
+            try {
+                // Tarayıcıya 'Pencereler' sekmesini öncelikli göstermesi için ipucu veriyoruz
+                stream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { displaySurface: 'window' }, 
+                    selfBrowserSurface: 'exclude' 
+                });
+            } catch (e) {
+                console.warn("selfBrowserSurface desteklenmiyor, varsayılan ayarlarla deneniyor", e);
+                stream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: { displaySurface: 'window' } 
+                });
+            }
             appState.screenStream = stream;
+            
+            // Ekran videosunu göster ve PIP moduna geç
             screenVideo.srcObject = stream;
             screenVideo.style.display = 'block';
             roomContainer.classList.add('screen-shared');
+            
             btnScreen.style.background = '#ff3b30';
+
+            // Yüzen kontrol panelini aç
+            openPiPWindow();
 
             // Ekran paylaşımı tarayıcıdan (alttaki bar üzerinden) durdurulursa yakalayalım
             stream.getVideoTracks()[0].onended = () => {
@@ -1203,6 +1348,11 @@ function stopScreenShare() {
     screenVideo.style.display = 'none';
     roomContainer.classList.remove('screen-shared');
     btnScreen.style.background = 'rgba(32,201,151,0.8)';
+
+    if (appState.pipWindow) {
+        appState.pipWindow.close();
+        appState.pipWindow = null;
+    }
 }
 
 function generateInviteLink() {
@@ -1223,12 +1373,8 @@ function generateInviteLink() {
 
 function toggleFullScreen() {
     const modalContent = document.getElementById('live-modal-content');
-    if (!document.fullscreenElement) {
-        modalContent.requestFullscreen().catch(err => {
-            console.error(`Tam ekran moduna geçilemedi: ${err.message}`);
-        });
-    } else {
-        document.exitFullscreen();
+    if (modalContent) {
+        modalContent.classList.toggle('maximized');
     }
 }
 
@@ -1301,15 +1447,81 @@ function populateParticipants() {
 
     // Dummy participant depending on role
     let otherName = appState.userRole === 'student' ? 'Eğitmen Geylani' : 'Öğrenci Ahmet';
+    
+    // Yöneticiler (Öğretmen/Admin) dersi başlattığında diğer katılımcıları sessize alma/görüntü kapatma yetkisine sahiptir.
+    let adminControls = '';
+    if(appState.userRole !== 'student') {
+        adminControls = `
+            <div style="margin-top: 5px; display: flex; gap: 5px;">
+                <button onclick="toggleRemoteMute()" style="background:#444; border:none; color:white; border-radius:4px; padding:2px 5px; cursor:pointer; font-size:0.7rem;" id="btn-remote-mute" title="Sesi Kapat">🔇</button>
+                <button onclick="toggleRemoteVideo()" style="background:#444; border:none; color:white; border-radius:4px; padding:2px 5px; cursor:pointer; font-size:0.7rem;" id="btn-remote-video" title="Görüntüyü Kapat">🚫</button>
+                <button onclick="ejectRemoteParticipant()" style="background:#ff3b30; border:none; color:white; border-radius:4px; padding:2px 5px; cursor:pointer; font-size:0.7rem;" id="btn-remote-eject" title="Odadan At">🚪</button>
+            </div>
+        `;
+    }
+
     list.innerHTML += `
         <li class="participant-item" id="dummy-participant-item">
             <div class="avatar" style="background:#f39c12;">${otherName.charAt(0).toUpperCase()}</div>
             <div>
                 <div style="font-weight:bold;">${otherName}</div>
                 <div style="font-size:0.8rem; color:#aaa;" id="dummy-participant-status">Bekleniyor...</div>
+                ${adminControls}
             </div>
         </li>
     `;
+}
+
+function toggleRemoteMute() {
+    const statusText = document.getElementById('dummy-participant-status');
+    const btn = document.getElementById('btn-remote-mute');
+    if(!statusText || !btn) return;
+
+    if(statusText.innerText.includes('Kapatıldı')) {
+        statusText.innerText = 'Mikrofon Açık';
+        statusText.style.color = '#20C997';
+        btn.style.background = '#444';
+    } else {
+        statusText.innerText = 'Sesi Kapatıldı (Yönetici)';
+        statusText.style.color = '#ff3b30';
+        btn.style.background = '#ff3b30';
+    }
+}
+
+function toggleRemoteVideo() {
+    const remoteVideo = document.getElementById('mock-remote-video');
+    const remoteBox = document.getElementById('remote-participant-box');
+    const remoteAvatar = document.getElementById('remote-avatar');
+    const btn = document.getElementById('btn-remote-video');
+    if(!remoteVideo || !btn || !remoteBox) return;
+
+    if(remoteBox.classList.contains('camera-off')) {
+        remoteBox.classList.remove('camera-off');
+        if(remoteAvatar) remoteAvatar.style.display = 'none';
+        btn.style.background = '#444';
+    } else {
+        remoteBox.classList.add('camera-off');
+        if(remoteAvatar) remoteAvatar.style.display = 'flex';
+        btn.style.background = '#ff3b30';
+    }
+}
+
+function ejectRemoteParticipant() {
+    // Katılımcı öğesini listeden sil
+    const participantItem = document.getElementById('dummy-participant-item');
+    if(participantItem) participantItem.remove();
+
+    // Kamera öğesini grid'den sil
+    const remoteBox = document.getElementById('remote-participant-box');
+    if(remoteBox) remoteBox.remove();
+
+    // Bildirim göster
+    const toast = document.getElementById("toast-message");
+    if(toast) {
+        toast.innerText = "Katılımcı odadan çıkarıldı.";
+        toast.className = "toast-message show";
+        setTimeout(function(){ toast.className = toast.className.replace("show", ""); setTimeout(() => toast.innerText="Link Kopyalandı!", 500); }, 3000);
+    }
 }
 
 function playJoinSound() {
@@ -1345,15 +1557,23 @@ function simulateParticipantJoin() {
         setTimeout(function(){ toast.className = toast.className.replace("show", ""); setTimeout(() => toast.innerText="Link Kopyalandı!", 500); }, 3000);
     }
 
-    // Grid'e ekle
-    const grid = document.getElementById('participants-video-container');
+    // Grid'e ekle (Simülasyon olarak yerel kameranın klonunu göster)
+    const grid = document.getElementById('main-video-grid');
     if(grid) {
-        grid.innerHTML = `
-            <div class="remote-participant-video">
-                <div class="initials">${otherName.charAt(0).toUpperCase()}</div>
-                <div class="label">${otherName}</div>
-            </div>
+        const box = document.createElement('div');
+        box.className = 'participant-box';
+        box.id = 'remote-participant-box';
+        box.innerHTML = `
+            <video id="mock-remote-video" autoplay muted playsinline style="transform: scaleX(-1); filter: hue-rotate(180deg) brightness(0.8) contrast(1.2);"></video>
+            <div class="camera-off-avatar" id="remote-avatar" style="display:none;">${otherName.charAt(0).toUpperCase()}</div>
+            <div class="participant-label">${otherName}</div>
         `;
+        grid.appendChild(box);
+        // Klon videoyu başlat
+        const remoteVideo = document.getElementById('mock-remote-video');
+        if(appState.localStream && remoteVideo) {
+            remoteVideo.srcObject = appState.localStream;
+        }
     }
 
     // Sidebar listesini güncelle

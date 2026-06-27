@@ -105,6 +105,23 @@ header svg { stroke: white; }
 .user-info { font-weight: 700; font-size: 0.95rem; color: #fff; }
 
 /* ==========================================================================
+   MAXIMIZED MODE (Browser tab fullscreen instead of OS fullscreen)
+   ========================================================================== */
+#live-modal-content.maximized {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    max-width: 100vw !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+}
+
+#live-modal-content.maximized #live-flex-container {
+    height: calc(100vh - 60px) !important;
+}
+
+/* ==========================================================================
    3. BUTONLAR VE FORMLAR
    ========================================================================== */
 .btn {
@@ -517,28 +534,28 @@ details.day-group .slots-grid {
 
 .live-class-room {
     width: 100%;
-    height: 400px;
+    height: 100%;
     background: #222;
     border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
     color: #fff;
     position: relative;
     overflow: hidden;
 }
 
-.live-class-room video {
+.live-class-room > video {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.8;
 }
 
 .live-class-controls {
     position: absolute;
     bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     gap: 15px;
     z-index: 10;
@@ -571,23 +588,12 @@ details.day-group .slots-grid {
 .live-class-room #screen-video {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Ekrani tam kaplamasi istendi (tam ekran yarisini kullanmamasi icin) */
+    object-fit: contain; /* Tam ekranda videonun kesilmemesi için contain yapıyoruz */
     background: #000;
-    flex-grow: 1;
+    z-index: 1; /* Alt katmanda ama görünür olacak */
 }
 
-.live-class-room.screen-shared #local-video {
-    position: absolute;
-    bottom: 90px; /* Above controls */
-    right: 20px;
-    width: 200px;
-    height: 150px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    border: 2px solid rgba(255,255,255,0.2);
-    z-index: 10;
-    transition: all 0.3s ease;
-}
+
 
 .toast-message {
     visibility: hidden;
@@ -754,44 +760,97 @@ details.day-group .slots-grid {
 }
 
 /* ==========================================================================
-   PARTICIPANT VIDEO GRID (REMOTE USERS)
+   UNIFIED PARTICIPANT VIDEO GRID (NO SCREEN SHARE)
    ========================================================================== */
-.participants-video-grid {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
+.main-video-grid {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-auto-rows: 1fr;
     gap: 15px;
+    padding: 20px;
+    box-sizing: border-box;
     z-index: 5;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    max-width: 60%;
-    pointer-events: none; /* Let clicks pass through to main video if needed */
+    background: #222;
 }
 
-.remote-participant-video {
-    width: 180px;
-    height: 120px;
-    background: #222;
-    border-radius: 10px;
-    border: 2px solid rgba(255,255,255,0.3);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+/* ==========================================================================
+   PARTICIPANT VIDEO BOX
+   ========================================================================== */
+.participant-box {
     position: relative;
+    background: #000;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: auto; /* Re-enable clicks */
     animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    width: 100%;
+    height: 100%;
 }
 
-.remote-participant-video .initials {
-    font-size: 3rem;
+.participant-box video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+}
+
+/* ==========================================================================
+   SCREEN SHARE MODE (PiP PIPELINE)
+   ========================================================================== */
+.live-class-room.screen-shared .main-video-grid {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: auto;
+    height: auto;
+    gap: 10px;
+    padding: 0;
+    background: transparent;
+    z-index: 10;
+}
+
+.live-class-room.screen-shared .participant-box {
+    width: 180px;
+    height: 120px;
+    border-radius: 10px;
+}
+
+/* ==========================================================================
+   CAMERA OFF STATES
+   ========================================================================== */
+.participant-box.camera-off video {
+    display: none;
+}
+
+.camera-off-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f39c12;
+    color: white;
+    font-size: 2.5rem;
     font-weight: bold;
-    color: rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.remote-participant-video .label {
+/* Kutu küçüldüğünde (PiP) avatar da biraz küçülmeli */
+.live-class-room.screen-shared .camera-off-avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+}
+
+.participant-label {
     position: absolute;
     bottom: 5px;
     left: 10px;
@@ -800,9 +859,84 @@ details.day-group .slots-grid {
     border-radius: 12px;
     font-size: 0.75rem;
     color: white;
+    z-index: 2;
 }
 
 @keyframes popIn {
     0% { transform: scale(0.5); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   MOBILE OPTIMIZATIONS
+   ========================================================================== */
+@media (max-width: 600px) {
+    /* Make controls smaller */
+    .live-class-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .live-class-controls {
+        gap: 8px;
+        padding: 8px;
+        border-radius: 20px;
+        bottom: 10px;
+    }
+
+    /* Small PiP for local video */
+    .live-class-room.screen-shared #local-video {
+        width: 100px;
+        height: 75px;
+        bottom: 60px;
+        right: 10px;
+        border-width: 1px;
+    }
+
+    /* Smaller Grid for Mobile PiP */
+    .live-class-room.screen-shared .main-video-grid {
+        top: 10px;
+        right: 10px;
+        gap: 5px;
+    }
+
+    .live-class-room.screen-shared .participant-box {
+        width: 100px;
+        height: 75px;
+        border-radius: 6px;
+    }
+
+    .participant-label {
+        font-size: 0.6rem;
+        padding: 1px 4px;
+        bottom: 2px;
+        left: 5px;
+    }
+
+    /* Sidebar smaller */
+    .live-sidebar.open {
+        width: 250px;
+    }
+
+    .sidebar-tab {
+        padding: 10px 0;
+        font-size: 0.9rem;
+    }
+
+    /* Maximized fixes for mobile */
+    #live-modal-content.maximized {
+        width: 100vw !important;
+        height: 100vh !important;
+    }
+    
+    #live-modal-content.maximized #live-flex-container {
+        height: calc(100vh - 50px) !important; /* Smaller header */
+    }
+    
+    #live-modal-content.maximized #screen-video {
+        object-fit: cover !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
 }
