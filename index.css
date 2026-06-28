@@ -389,6 +389,10 @@ details.day-group .slots-grid {
 .kazanim-node.active { background: #F39C12; color: white; transform: scale(1.1); box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);}
 .kazanim-node.completed { background: #20C997; color: #fff; }
 
+.small-timeline .kazanim-node { width: 26px; height: 26px; font-size: 11px; margin: 2px; }
+.small-timeline .kazanim-node.active { transform: scale(1.2); }
+
+
 .admin-table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #E9EEF5;}
 .admin-table th { background: #F0F4F8; padding: 15px; color: #16A085; font-weight: 700; }
 .admin-table td { padding: 15px; border-bottom: 1px solid #E9EEF5; }
