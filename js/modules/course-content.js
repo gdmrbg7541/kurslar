@@ -84,7 +84,7 @@ function loadKazanimData() {
                             finalUrl = `https://www.youtube.com/embed/${videoId}`;
                         }
                     } catch(e) {}
-                    return `<div style="text-align:center; margin-bottom:15px; display:flex; justify-content:center; align-items:center; width:100%;"><iframe src="${finalUrl}" style="width:100%; max-width:850px; aspect-ratio:16/9; max-height:45vh; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" frameborder="0" allowfullscreen></iframe></div>`;
+                    return `<div style="text-align:center; margin-bottom:15px; display:flex; justify-content:center; align-items:center; width:100%;"><iframe src="${finalUrl}" style="width:100%; max-width:950px; aspect-ratio:4/3; max-height:65vh; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1);" frameborder="0" allowfullscreen></iframe></div>`;
                 }
                 return '';
             }).join('');
@@ -121,14 +121,14 @@ function loadKazanimData() {
                 (q.options || []).forEach((opt, idx) => {
                     let isCorrect = (q.correctOptionIndex === idx);
                     let idAttr = isCorrect ? `id="correct-option-btn"` : '';
-                    qHtml += `<button class="mc-option-btn" ${idAttr} style="text-align:left; padding:12px 15px; border:1px solid #cbd5e1; border-radius:8px; background:white; cursor:pointer; font-size:0.95rem; transition:0.2s;" onmouseover="if(!this.classList.contains('selected')) this.style.background='#f1f5f9'" onmouseout="if(!this.classList.contains('selected')) this.style.background='white'" onclick="selectOption(this, ${isCorrect})"><span style="font-weight:bold; margin-right:10px; color:#4facfe;">${['A','B','C','D','E'][idx]}</span> ${opt}</button>`;
+                    qHtml += `<button class="mc-option-btn" ${idAttr} style="text-align:left; padding:20px 25px; border:1px solid #cbd5e1; border-radius:12px; background:white; cursor:pointer; font-family: inherit; font-size:1.8rem; transition:0.2s;" onmouseover="if(!this.classList.contains('selected')) this.style.background='#f1f5f9'" onmouseout="if(!this.classList.contains('selected')) this.style.background='white'" onclick="selectOption(this, ${isCorrect})"><span style="font-weight:bold; margin-right:15px; color:#4facfe; font-family: sans-serif;">${['A','B','C','D','E'][idx]}</span> ${opt}</button>`;
                 });
                 qHtml += `</div>`;
             } else if (q.type === 'true_false') {
                 qHtml += `
-                    <div style="display:flex; gap:15px;">
-                        <button class="tf-option-btn" data-base-color="#20C997" ${q.isTrue === true ? 'id="correct-option-btn"' : ''} style="flex:1; padding:15px; background:white; border:2px solid #20C997; color:#20C997; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; transition:0.2s;" onmouseover="if(!this.classList.contains('selected')){this.style.background='#20C997'; this.style.color='white'}" onmouseout="if(!this.classList.contains('selected')){this.style.background='white'; this.style.color='#20C997'}" onclick="selectOption(this, ${q.isTrue === true})">Doğru</button>
-                        <button class="tf-option-btn" data-base-color="#e74c3c" ${q.isTrue === false ? 'id="correct-option-btn"' : ''} style="flex:1; padding:15px; background:white; border:2px solid #e74c3c; color:#e74c3c; border-radius:8px; font-weight:bold; font-size:1.1rem; cursor:pointer; transition:0.2s;" onmouseover="if(!this.classList.contains('selected')){this.style.background='#e74c3c'; this.style.color='white'}" onmouseout="if(!this.classList.contains('selected')){this.style.background='white'; this.style.color='#e74c3c'}" onclick="selectOption(this, ${q.isTrue === false})">Yanlış</button>
+                    <div style="display:flex; gap:20px;">
+                        <button class="tf-option-btn" data-base-color="#20C997" ${q.isTrue === true ? 'id="correct-option-btn"' : ''} style="flex:1; padding:25px; background:white; border:2px solid #20C997; color:#20C997; border-radius:12px; font-weight:bold; font-size:1.8rem; font-family: inherit; cursor:pointer; transition:0.2s;" onmouseover="if(!this.classList.contains('selected')){this.style.background='#20C997'; this.style.color='white'}" onmouseout="if(!this.classList.contains('selected')){this.style.background='white'; this.style.color='#20C997'}" onclick="selectOption(this, ${q.isTrue === true})">Doğru</button>
+                        <button class="tf-option-btn" data-base-color="#e74c3c" ${q.isTrue === false ? 'id="correct-option-btn"' : ''} style="flex:1; padding:25px; background:white; border:2px solid #e74c3c; color:#e74c3c; border-radius:12px; font-weight:bold; font-size:1.8rem; font-family: inherit; cursor:pointer; transition:0.2s;" onmouseover="if(!this.classList.contains('selected')){this.style.background='#e74c3c'; this.style.color='white'}" onmouseout="if(!this.classList.contains('selected')){this.style.background='white'; this.style.color='#e74c3c'}" onclick="selectOption(this, ${q.isTrue === false})">Yanlış</button>
                     </div>
                 `;
             } else if (q.type === 'matching') {
@@ -382,12 +382,12 @@ function simulateAnswer(isCorrect, btn) {
     
     renderKazanimTimeline(); // Rengini güncelle
     
-    if (isCorrect) {
-        let nextBtn = document.getElementById('next-step-btn');
-        if (nextBtn) {
-            nextBtn.disabled = false;
-            nextBtn.style.opacity = '1';
-            nextBtn.classList.add('pulse-animation'); // Dikkat çekmesi için (varsa)
+    let nextBtn = document.getElementById('next-step-btn');
+    if (nextBtn) {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        if (isCorrect) {
+            nextBtn.classList.add('pulse-animation'); // Sadece doğruysa animasyon ekle
         }
     }
 }

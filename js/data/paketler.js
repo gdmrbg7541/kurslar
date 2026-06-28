@@ -19,36 +19,30 @@ window.DATA_PAKETLER = [
             {
                 adim: 1,
                 baslik: "Kök ve Vezin Mantığı",
-                konuAnlatimi: "Bu derste Arapça kelimelerin yapısını oluşturan 6 temel kalıbı inceleyeceğiz.",
-                videoUrl: "https://www.youtube.com/watch?v=R2wFGPbU3r4", // YouTube Video Linki Buraya
+                konuAnlatimi: "Bu derste Arapça kelimelerin yapısını oluşturan 6 temel kalıbı (vezni) inceleyeceğiz. Vezinlerdeki kırmızı zaid harfleri köklere ekleyerek yeni kelimeler elde edeceğiz.",
+                videoUrl: "https://www.youtube.com/watch?v=R2wFGPbU3r4",
                 sorular: [
                     {
                         tip: "coktan_secmeli",
-                        soru: "Aşağıdaki harflerden hangisi boğazdan çıkar?",
-                        secenekler: ["ب (Be)", "ت (Te)", "ح (Ha)", "س (Sin)"],
-                        dogruCevap: "ح (Ha)"
+                        soru: "Aşağıdaki kelimelerden hangisi مفعول kalıbından türetilmiştir?",
+                        secenekler: ["فَاتِح", "مَكْتُوب", "مَجْلِس", "تَرْتِيب"],
+                        dogruCevap: "مَكْتُوب"
                     },
                     {
                         tip: "eslestirme",
-                        soru: "Aşağıdaki harfleri okunuşlarıyla eşleştiriniz.",
+                        soru: "Kelimeleri uygun oldukları kalıplarla (vezinlerle) eşleştiriniz.",
                         ciftler: {
-                            "ب": "Be",
-                            "ث": "Se",
-                            "ج": "Cim",
-                            "خ": "Hı"
+                            "كَاتِب, عَالِم": "فاعل",
+                            "مَوْقِع, مَسْجِد": "مفعل",
+                            "جَلَّاد, قَهَّار": "فعّال",
+                            "تَسْبِيح, تَرْجِيح": "تفعيل"
                         }
-                    }
-                ]
-            },
-            {
-                adim: 2,
-                baslik: "Harflerin Bitişmesi",
-                konuAnlatimi: "Arapçada harfler kelime başında, ortasında ve sonunda farklı yazılır...",
-                sorular: [
+                    },
                     {
-                        tip: "bosluk_doldurma",
-                        soru: "Arapçada _ harfi kendinden sonraki harfe bitişmez.",
-                        dogruCevap: "Elif"
+                        tip: "coktan_secmeli",
+                        soru: "يَفْتَحُ, يَجْعَلُ, يَلْعَبُ kelimeleri تفعيل kalıbındadır. Bu ifade doğru mudur?",
+                        secenekler: ["Doğru", "Yanlış (يفعل kalıbındadır)"],
+                        dogruCevap: "Yanlış (يفعل kalıbındadır)"
                     }
                 ]
             }

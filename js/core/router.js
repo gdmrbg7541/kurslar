@@ -174,14 +174,30 @@ function changeView(viewName, isBackAction = false) {
             window.scrollTo(0, 0);
         }
     } else if (viewName === 'offline-list') {
-        document.getElementById('offline-section').style.display = 'block';
+        let offlineSec = document.getElementById('offline-section');
+        offlineSec.style.display = 'block';
+        offlineSec.style.padding = ''; // Reset padding
+        let cont = document.querySelector('.container');
+        if(cont) {
+            cont.style.padding = ''; // Reset container padding
+            cont.style.marginTop = ''; // Reset container margin
+        }
+        
         let h2 = document.querySelector('#offline-section h2');
         if(h2) h2.style.display = 'block';
         document.getElementById('package-list-area').style.display = 'grid';
         if (typeof renderPackages === 'function') renderPackages();
         if (typeof updateOfflineSummary === 'function') updateOfflineSummary();
     } else if (viewName === 'active-package') {
-        document.getElementById('offline-section').style.display = 'block';
+        let offlineSec = document.getElementById('offline-section');
+        offlineSec.style.display = 'block';
+        offlineSec.style.padding = '5px 5px 20px 5px'; // Üstten tam 5px boşluk, alttaki 120px scroll'u iptal et
+        let cont = document.querySelector('.container');
+        if(cont) {
+            cont.style.padding = '0'; // Dış container boşluğunu sıfırla
+            cont.style.marginTop = '0'; // Dış container üst boşluğunu sıfırla
+        }
+        
         let h2 = document.querySelector('#offline-section h2');
         if(h2) h2.style.display = 'none';
         document.getElementById('active-package-area').style.display = 'block';
